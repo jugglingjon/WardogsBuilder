@@ -39,7 +39,11 @@ jobs:
 
       - run: npm run build
 
+      # enablement switches Pages on through the API on the first run, so the
+      # site does not have to be turned on by hand in repository settings.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
