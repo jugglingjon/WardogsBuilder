@@ -39,6 +39,15 @@ export class Dialog {
   }
 }
 
+/**
+ * One dialog element for the whole app. Two would mean two modals able to open
+ * over each other, and two copies of the same markup in the document.
+ */
+let shared = null;
+export function sharedDialog() {
+  return (shared ??= new Dialog());
+}
+
 /** A brief message that does not need acknowledging. */
 export function toast(message, { level = 'info' } = {}) {
   let host = document.querySelector('#toast');

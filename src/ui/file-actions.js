@@ -8,7 +8,7 @@
 import { Storage } from '../model/storage.js';
 import { toDocument, toJSON, fromDocument } from '../model/serialize.js';
 import { shareUrl, readShare } from '../model/share.js';
-import { Dialog, toast } from './dialog.js';
+import { sharedDialog, toast } from './dialog.js';
 
 const AUTOSAVE_DELAY = 700;
 
@@ -24,7 +24,7 @@ export class FileActions {
     this.history = history;
     this.view = view;
     this.storage = storage;
-    this.dialog = new Dialog();
+    this.dialog = sharedDialog();
 
     model.on('change', () => this.#scheduleAutosave());
   }

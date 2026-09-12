@@ -20,9 +20,10 @@ export class Placement {
   #signature = null;
   #footprint = null;
 
-  constructor({ model, view }) {
+  constructor({ model, view, sync }) {
     this.model = model;
     this.view = view;
+    this.sync = sync;
     this.elementId = null;
     this.rotation = 0;
     this.proposal = null;
@@ -66,23 +67,34 @@ export class Placement {
     );
     this.raycaster.setFromCamera(this.pointer, this.view.camera);
 
-    // Pieces painted during the current drag are excluded. Without that, each
-    // one becomes the next ray's target and a stationary cursor walks a line of
-    // pieces sideways off its own last placement.
-    const targets = this.view.pieces.children
-      .filter((object) => !exclude?.has(object.userData.pieceId));
+    const targets = [...this.view.pieces.children];
     if (this.view.ground) targets.push(this.view.ground);
-    const hit = this.raycaster.intersectObjects(targets, true)[0];
-    if (!hit) return null;
 
-    const point = hit.point.clone();
-    if (hit.face) {
-      const normal = hit.face.normal.clone()
-        .transformDirection(hit.object.matrixWorld)
-        .multiplyScalar(0.5);
-      point.add(normal);
+    // Walk the hits nearest first, skipping pieces painted during the current
+    // drag. Without that each one becomes the next ray's target and a
+    // stationary cursor walks a line of pieces sideways off its own last
+    // placement.
+    for (const hit of this.raycaster.intersectObjects(targets, true)) {
+      if (hit.object === this.sync.edges) continue;
+      const pieceId = this.sync.pieceIdFromHit(hit);
+      if (pieceId && exclude?.has(pieceId)) continue;
+
+      const point = hit.point.clone();
+      if (hit.face) {
+        const normal = hit.face.normal.clone();
+        if (hit.instanceId != null) {
+          // An instance carries its own rotation, which the object matrix alone
+          // does not describe.
+          const matrix = new THREE.Matrix4();
+          hit.object.getMatrixAt(hit.instanceId, matrix);
+          normal.transformDirection(matrix);
+        }
+        normal.transformDirection(hit.object.matrixWorld).multiplyScalar(0.5);
+        point.add(normal);
+      }
+      return { x: Math.floor(point.x), y: Math.floor(point.z) };
     }
-    return { x: Math.floor(point.x), y: Math.floor(point.z) };
+    return null;
   }
 
   /** Recompute the proposal for this pointer position and redraw the ghost. */
@@ -137,7 +149,7 @@ export class Placement {
       child.removeFromParent();
       child.geometry?.dispose();
     }
-    const tint = color ? new THREE.Color(color) : themeColor('--c-danger', '#d4504a');
+    const tint = color ? new THREE.Color(color) : themeColor('--c-danger', '#e5706a');
 
     const box = new THREE.BoxGeometry(w, h, d);
     this.group.add(new THREE.Mesh(box, new THREE.MeshBasicMaterial({

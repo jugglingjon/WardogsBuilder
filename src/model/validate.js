@@ -31,7 +31,17 @@ export const REASON_TEXT = {
  * margin in every horizontal direction. Null when none is placed, in which case
  * the whole grid is available so the first one can go anywhere.
  */
+const regionCache = new WeakMap();
+
 export function buildRegion(model) {
+  const cached = regionCache.get(model);
+  if (cached && cached.revision === model.revision) return cached.region;
+  const region = computeRegion(model);
+  regionCache.set(model, { revision: model.revision, region });
+  return region;
+}
+
+function computeRegion(model) {
   const defining = model.catalog.regionDefiningElement();
   if (!defining) return null;
   const piece = model.pieces().find((p) => p.type === defining.id);

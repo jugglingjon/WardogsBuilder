@@ -19,14 +19,16 @@ export class SceneEditor {
   #paint = null;
   #move = null;
   #down = null;
+  #pointers = new Set();
   #clipboard = null;
   #lastCell = null;
   #painted = new Set();
   #paintedIds = new Set();
 
-  constructor(canvas, { model, history, view, placement, onStatus, onToolChange }) {
+  constructor(canvas, { model, history, view, sync, placement, onStatus, onToolChange }) {
     this.canvas = canvas;
     this.model = model;
+    this.sync = sync;
     this.history = history;
     this.view = view;
     this.placement = placement;
@@ -144,6 +146,7 @@ export class SceneEditor {
     canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 
     canvas.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'touch') return; // the camera owns touch drags
       if (this.#move) return this.#updateMove(event);
       const proposal = this.tool === TOOLS.PLACE
         ? this.placement.update(event, this.#paint ? this.#paintedIds : null)
@@ -162,9 +165,19 @@ export class SceneEditor {
     });
 
     canvas.addEventListener('pointerdown', (event) => {
+      this.#pointers.add(event.pointerId);
       if (event.button !== 0) return;
-      canvas.setPointerCapture(event.pointerId);
-      this.#down = { x: event.clientX, y: event.clientY, moved: false };
+
+      // A touch drag belongs to the camera, so the tool waits for the release
+      // and only acts if the finger stayed put. A mouse acts immediately.
+      if (event.pointerType === 'touch') {
+        this.#down = { x: event.clientX, y: event.clientY, touch: true, event };
+        return;
+      }
+
+      // Capture can be refused if the pointer was released between events.
+      try { canvas.setPointerCapture(event.pointerId); } catch { /* drag still works */ }
+      this.#down = { x: event.clientX, y: event.clientY };
 
       if (this.tool === TOOLS.PLACE) {
         this.#painted.clear();
@@ -183,6 +196,16 @@ export class SceneEditor {
     });
 
     const finish = (event) => {
+      if (event) this.#pointers.delete(event.pointerId);
+
+      if (event && this.#down?.touch) {
+        const still = Math.hypot(event.clientX - this.#down.x, event.clientY - this.#down.y) < 8;
+        const alone = this.#pointers.size === 0;
+        this.#down = null;
+        if (still && alone) this.#tap(event);
+        return;
+      }
+
       if (this.#move) this.#commitMove();
       this.#paint = null;
       this.#down = null;
@@ -201,6 +224,27 @@ export class SceneEditor {
    * piece lands, so keying on it would let a cursor that never moved keep
    * stacking a tower on top of its own last placement.
    */
+  /** A single touch action: place one, erase one, or select one. */
+  #tap(event) {
+    if (this.tool === TOOLS.PLACE) {
+      this.placement.update(event);
+      this.#painted.clear();
+      this.#paintedIds.clear();
+      this.#paint = composite('Place element');
+      this.history.run(this.#paint);
+      this.#paintHere();
+      this.#paint = null;
+      this.placement.clear();
+    } else if (this.tool === TOOLS.ERASE) {
+      const id = this.#pieceAt(event);
+      if (id) this.history.run(deletePieces(this.model, [id]));
+    } else {
+      const id = this.#pieceAt(event);
+      if (id) this.model.select(id, { additive: event.shiftKey });
+      else this.model.clearSelection();
+    }
+  }
+
   #paintHere() {
     const proposal = this.placement.proposal;
     if (!proposal?.valid) return;
@@ -227,8 +271,12 @@ export class SceneEditor {
     );
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(pointer, this.view.camera);
-    const hit = raycaster.intersectObjects(this.view.pieces.children, true)[0];
-    return hit?.object.userData.pieceId ?? hit?.object.parent?.userData.pieceId ?? null;
+    for (const hit of raycaster.intersectObjects(this.view.pieces.children, true)) {
+      if (hit.object === this.sync.edges) continue;
+      const id = this.sync.pieceIdFromHit(hit);
+      if (id) return id;
+    }
+    return null;
   }
 
   #startSelect(event) {
@@ -289,7 +337,7 @@ export class SceneEditor {
 
     this.previewMaterial ??= {
       ok: new THREE.LineBasicMaterial({ color: 0xd98324 }),
-      bad: new THREE.LineBasicMaterial({ color: 0xd4504a })
+      bad: new THREE.LineBasicMaterial({ color: 0xe5706a })
     };
     for (const id of ids) {
       const piece = this.model.piece(id);

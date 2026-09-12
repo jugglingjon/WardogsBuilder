@@ -35,11 +35,23 @@ export class BuildModel extends Emitter {
     this.occupancy = new Occupancy();
     this.selection = new Set();
     this.slice = 0;
+    this.revision = 0;
     this._pieces = new Map();
+    this._list = null;
   }
 
+  /**
+   * Cached, because canPlace runs over every piece during validation and a
+   * fresh array per call is the difference between linear and quadratic.
+   * Treat the result as read-only.
+   */
   pieces() {
-    return [...this._pieces.values()];
+    return (this._list ??= [...this._pieces.values()]);
+  }
+
+  #touch() {
+    this._list = null;
+    this.revision++;
   }
 
   piece(id) {
@@ -58,6 +70,7 @@ export class BuildModel extends Emitter {
     const piece = { id, type, x, y, z, rot: normalizeRotation(rot) };
     this._pieces.set(piece.id, piece);
     this.occupancy.add(piece, this.elementOf(piece));
+    this.#touch();
     this.emit('piece:add', piece);
     this.emit('change', { reason: 'piece:add', piece });
     return piece;
@@ -69,6 +82,7 @@ export class BuildModel extends Emitter {
     this.occupancy.remove(piece, this.elementOf(piece));
     this._pieces.delete(id);
     this.selection.delete(id);
+    this.#touch();
     this.emit('piece:remove', piece);
     this.emit('change', { reason: 'piece:remove', piece });
     return piece;
@@ -83,6 +97,7 @@ export class BuildModel extends Emitter {
     Object.assign(piece, patch);
     if (patch.rot != null) piece.rot = normalizeRotation(patch.rot);
     this.occupancy.add(piece, element);
+    this.#touch();
     this.emit('piece:update', piece);
     this.emit('change', { reason: 'piece:update', piece });
     return piece;
@@ -118,6 +133,7 @@ export class BuildModel extends Emitter {
     this._pieces.clear();
     this.occupancy.clear();
     this.selection.clear();
+    this.#touch();
     if (grid) this.grid = grid;
     if (name) this.name = name;
     for (const spec of pieces) {
@@ -128,6 +144,7 @@ export class BuildModel extends Emitter {
       const n = Number.parseInt(String(piece.id).replace(/^p/, ''), 10);
       if (Number.isFinite(n)) idCounter = Math.max(idCounter, n);
     }
+    this.#touch();
     this.emit('reset', this);
     this.emit('change', { reason: 'reset' });
   }

@@ -22,6 +22,7 @@ import { CutControl } from './ui/cut-control.js';
 import { Palette } from './ui/palette.js';
 import { IssuesPanel, TallyPanel, StatsPanel } from './ui/panels.js';
 import { bindShortcuts } from './ui/shortcuts.js';
+import { Hints } from './ui/hints.js';
 import { FileActions } from './ui/file-actions.js';
 import { seedSampleBuild } from './sample-build.js';
 
@@ -73,10 +74,7 @@ document.querySelector('#app').innerHTML = `
         </div>
         <div class="pane__body" id="view-body">
           <canvas id="view-canvas"></canvas>
-          <div class="empty-state" id="empty-state" hidden>
-            <strong>Place a FOB to begin</strong>
-            <span>It defines the 103 × 103 m area you can build in.</span>
-          </div>
+          <div class="empty-state" id="hint" hidden></div>
         </div>
       </section>
     </div>
@@ -91,13 +89,14 @@ const history = new History();
 const viewCanvas = document.querySelector('#view-canvas');
 const view = new SceneView(viewCanvas, { model });
 const sync = new SceneSync({ model, view, factory: new MeshFactory(catalog) });
-const placement = new Placement({ model, view });
+const placement = new Placement({ model, view, sync });
 
 const statusEl = document.querySelector('#view-status');
 const editor = new SceneEditor(viewCanvas, {
   model,
   history,
   view,
+  sync,
   placement,
   onStatus: ({ cell, z, message }) => {
     if (!cell) { statusEl.textContent = ''; return; }
@@ -174,11 +173,8 @@ new IssuesPanel(document.querySelector('#issues'), {
 });
 new TallyPanel(document.querySelector('#tally'), { model });
 new StatsPanel(document.querySelector('#stats'), { model });
-bindShortcuts({ history });
-
-const emptyState = document.querySelector('#empty-state');
-const updateEmptyState = () => { emptyState.hidden = model.count > 0; };
-model.on('change', updateEmptyState);
+const help = bindShortcuts({ history });
+document.querySelector('#help').addEventListener('click', () => help.showHelp());
 
 // Frame the camera on the first piece placed, so the view is never left staring
 // at empty ground.
@@ -196,7 +192,7 @@ view.frame(null);
 // Restore the last session, or open a build carried in the link, before the
 // first autosave can overwrite either.
 files.restore().then((outcome) => {
-  updateEmptyState();
+  new Hints(document.querySelector('#hint'), { model, view });
   if (outcome !== 'empty') {
     autoFramed = true;
     frameBuild();

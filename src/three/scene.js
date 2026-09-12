@@ -44,6 +44,10 @@ export class SceneView {
     this.controls.maxPolarAngle = Math.PI / 2 - 0.02; // never drop below ground
     this.controls.minDistance = 3;
     this.controls.maxDistance = 400;
+    // One finger orbits and a tap uses the tool, because a phone has no right
+    // button and a finger that both builds and turns the camera does neither
+    // well. Two fingers pinch and pan.
+    this.controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     this.controls.addEventListener('start', () => { this.#spinning = true; });
     this.controls.addEventListener('end', () => { this.#spinning = false; this.invalidate(); });
     this.controls.addEventListener('change', () => this.invalidate());

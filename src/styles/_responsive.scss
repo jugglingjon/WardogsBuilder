@@ -1,0 +1,46 @@
+/* Loaded last, so these overrides win against the component partials that
+   define the same properties at the same specificity. */
+
+@media (max-width: 1100px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  /* With the plan hidden there is no third row to fill, and leaving one
+     stranded the 3D view in a band with dead space under it. */
+  .workspace.is-plan-hidden {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .rail {
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .rail__section { border-bottom: 0; border-right: 1px solid var(--c-line); min-width: 220px; }
+  .pane + .pane { border-left: 0; border-top: 1px solid var(--c-line); }
+}
+
+@media (pointer: coarse) {
+  .btn { padding: 9px 12px; }
+  .pane__header .btn { padding: 7px 10px; }
+  .slice__step { padding: 8px 10px; }
+  .element { padding: 11px 8px; }
+  .save { grid-template-columns: 1fr auto; row-gap: 6px; }
+}
+
+@media (max-width: 720px) {
+  :root { --rail-width: 100%; --bar-height: 48px; }
+
+  .toolbar__brand { display: none; }
+  .toolbar { gap: 8px; }
+  .field { min-width: 110px; }
+  .rail { max-height: 32vh; }
+  .pane__header { height: auto; flex-wrap: wrap; gap: 6px; padding: 6px 10px; }
+  .status { flex: 1 0 100%; justify-content: flex-start; }
+  .empty-state { left: 10px; right: 10px; bottom: 12px; transform: none; }
+}

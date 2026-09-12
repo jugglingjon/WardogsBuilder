@@ -107,3 +107,28 @@
   &--warn { border-color: var(--c-warning); }
   &.is-leaving { opacity: 0; transform: translateY(6px); }
 }
+
+.dialog__body section + section { margin-top: 4px; }
+
+.keys {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: 8px 0 0;
+  align-items: baseline;
+
+  dt { margin: 0; }
+  dd { margin: 0; font-size: 13px; color: var(--c-text-muted); }
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid var(--c-line-strong);
+  border-radius: 3px;
+  background: var(--c-surface-raised);
+  color: var(--c-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}

@@ -248,6 +248,11 @@ bar names every reason, so a refusal is never a mystery.
 pans, scroll zooms. Left is not shared with the camera, so a click never has to
 be told apart from a camera move, and drag to paint a run of walls works.
 
+**Touch layout.** A phone has no right button, and a finger that both builds and
+turns the camera does neither well. So one finger orbits, two fingers pinch and
+pan, and a tap uses the tool. Painting a run by dragging is a mouse affordance;
+on touch it is repeated taps.
+
 **Tools**
 
 | Tool | Key | Behaviour |
@@ -329,12 +334,32 @@ fill plus one directional light for shading and shadows, a ground plane matching
 the grid extent, and a `GridHelper` aligned to the 2D grid so both panes read as
 the same space.
 
-**Meshes.** Every element is a box of its declared dimensions, so the mesh
-factory is trivial: one `BoxGeometry` per element type, cached and shared across
-every instance. A hundred Hesco blocks cost one geometry and one material.
-`composedOf` parts render their sub-blocks with a small gap so the seams read.
-Visual detail beyond boxes (a radar dish on the Air Defense, texture on the
-Hesco gabions) is a Phase 6 pass, deliberately after the tool works.
+**Meshes.** Pieces of the same element type share one `InstancedMesh`, so draw
+calls track the number of element types rather than the size of the build. Each
+piece owns a block of consecutive instances, one per part of its element, and a
+`composedOf` element such as the Long Hesco Wall has four, so it reads as four
+blocks rather than a wall-shaped lump. Removing a piece swaps the last block
+into the hole instead of rebuilding, which makes an erase constant time.
+
+Every piece outline is drawn as one merged line set, rebuilt from the model
+rather than patched, and dropped above 2500 pieces where the lines stop reading
+anyway. Surfaces are canvas-drawn: a wire cage over speckled fill for Hesco,
+a subtler speckle for concrete.
+
+Measured on a deliberately large build, in software rendering:
+
+| Pieces | Draw calls | Frame |
+| --- | --- | --- |
+| 500 | 5 | 0.4 ms |
+| 1500 | 5 | 0.3 ms |
+| 3000 | 4 | 0.1 ms |
+
+**Two things that had to be learned the hard way.** An `InstancedMesh` caches
+the bounding volume it raycasts against and never notices that its instances
+moved, so every write has to invalidate it or the cursor starts missing pieces
+that are plainly under it. And lines raycast with a one metre threshold by
+default, which put a fuzzy halo around every piece; the merged edge set is
+excluded from raycasting entirely.
 
 The build region draws as a translucent boundary on the ground plane, matching
 the 2D pane.
@@ -398,7 +423,7 @@ The client is designed to work fully without it.
 
 Each phase ends with something runnable.
 
-Phases 0 to 5 are complete as of the current branch.
+All phases are complete as of the current branch.
 
 **Phase 0 — Scaffold.** ✅ Vite project, SCSS pipeline, two-pane responsive layout
 shell, toolbar and palette chrome. No behaviour.
@@ -428,9 +453,9 @@ toggleable overview. The model core did not change: the landing rule was already
 export, share link, screenshot, and the tally panel: element counts and total
 building material cost, with placeholder costs visibly marked.
 
-**Phase 6 — Polish.** Shortcut overlay, empty-state hints, element
-visual detail, touch support, contrast pass, performance pass against a
-deliberately large build.
+**Phase 6 — Polish.** ✅ Shortcut overlay, first-run hints, element surfaces,
+touch support, contrast pass, and a performance pass against a deliberately
+large build.
 
 Phases 0 through 3 are the minimum to demonstrate the concept. Phases 4 and 5
 are what make it a tool worth returning to.
@@ -469,14 +494,24 @@ reasoning behind the rules is not lost:
    the 4 × 1 wall. If a later element has a front, `facing` in the catalog is
    where it goes.
 
+## 11a. Still open
+
+**Marquee selection.** Dragging a rectangle to select several pieces went away
+with the 2D grid, since a grid rectangle stopped meaning anything once editing
+moved into perspective. Multi-select is shift-click. A screen-space marquee is
+the natural replacement and has not been built.
+
+**Capped cut faces.** The section cut leaves the cut surfaces open rather than
+capped. It reads clearly enough as a section; capping needs a stencil pass.
+
 ## 12. Risks
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | Catalog does not match the real game | Plans mislead | All part definitions live in `elements.json`; corrections are edits, not refactors |
-| Large builds slow the 3D view | Editing feels laggy | Shared cached geometry and delta sync from the start; `InstancedMesh` batching held in reserve |
+| Large builds slow the 3D view | Editing feels laggy | Resolved in phase 6: instanced meshes hold draw calls flat, and panel validation is coalesced to a frame rather than run per placed piece |
 | Placeholder costs read as authoritative | Users plan against invented numbers | `costPlaceholder` in the catalog; the tally marks them rather than showing a bare figure |
 | Support rules change once the game is checked | Existing builds become invalid | `canSupport` is catalog data and the validator reports rather than deletes, so a rule change flags affected pieces instead of destroying work |
 | The two panes disagree about coordinates | Confusing and hard to debug | One shared `gridToWorld()`, unit tested |
-| Touch and small screens | Unusable on tablets | Layout stacks under a breakpoint; touch handled as a Phase 6 pass, not retrofitted late |
+| Touch and small screens | Unusable on tablets | Resolved in phase 6: one finger orbits and a tap builds, the layout stacks under a breakpoint, and hit targets grow on coarse pointers |
 | Precision at grazing camera angles | Pieces land a cell off | The ghost paints its footprint on the landing surface, so the cells are visible before committing |

@@ -3,6 +3,7 @@
  * Both redraw from the model on every change; they hold no state of their own.
  */
 import { validateBuild, tally, buildRegion } from '../model/validate.js';
+import { coalesce } from './coalesce.js';
 
 export class IssuesPanel {
   constructor(root, { model, onFocusPiece }) {
@@ -12,7 +13,8 @@ export class IssuesPanel {
       const row = event.target.closest('[data-piece]');
       if (row) onFocusPiece?.(row.dataset.piece);
     });
-    model.on('change', () => this.render());
+    this.refresh = coalesce(() => this.render());
+    model.on('change', this.refresh);
     this.render();
   }
 
@@ -36,7 +38,8 @@ export class TallyPanel {
   constructor(root, { model }) {
     this.root = root;
     this.model = model;
-    model.on('change', () => this.render());
+    this.refresh = coalesce(() => this.render());
+    model.on('change', this.refresh);
     this.render();
   }
 
@@ -69,8 +72,9 @@ export class StatsPanel {
   constructor(root, { model }) {
     this.root = root;
     this.model = model;
-    model.on('change', () => this.render());
-    model.on('slice:change', () => this.render());
+    this.refresh = coalesce(() => this.render());
+    model.on('change', this.refresh);
+    model.on('slice:change', this.refresh);
     this.render();
   }
 

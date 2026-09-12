@@ -3,6 +3,8 @@
  * any more of, such as a second FOB, are dimmed rather than hidden, so the
  * limit is visible instead of mysterious.
  */
+import { coalesce } from './coalesce.js';
+
 export class Palette {
   #root;
   #model;
@@ -18,7 +20,7 @@ export class Palette {
       if (!button || button.disabled) return;
       this.select(button.dataset.element);
     });
-    model.on('change', () => this.render());
+    model.on('change', coalesce(() => this.render()));
     this.render();
   }
 

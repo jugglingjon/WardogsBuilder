@@ -36,6 +36,7 @@ export class Toolbar {
         <button class="btn" data-action="share" title="Copy a link to this build">Share</button>
         <button class="btn" data-action="image" title="Save the view as a PNG">Image</button>
         <button class="btn" data-action="plan" title="Show the plan overview">Plan</button>
+        <button class="btn" id="help" title="Keyboard and mouse (?)" aria-label="Shortcuts">?</button>
       </div>
     `;
 

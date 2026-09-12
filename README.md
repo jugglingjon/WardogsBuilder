@@ -45,6 +45,10 @@ status bar.
 | Zoom | Scroll |
 | Frame the build | The Frame button, or the Top, Front and Corner presets |
 | Section cut | Clip, then move the height with the stepper or `PageUp` and `PageDown` |
+| Every shortcut | `?` |
+
+On a touch screen one finger orbits, two fingers pinch and pan, and a tap uses
+the current tool.
 
 Pieces land on the highest surface under their footprint, or on the ground.
 Nothing floats, so there is no height control to think about.
@@ -75,11 +79,12 @@ account and no server behind it. Image saves the view as a PNG.
 
 ## Status
 
-Phases 0 to 5 are complete, and editing has since moved from the 2D grid into
-the 3D view. Phase 6 is polish. See `docs/PLAN.md`.
+All six phases are complete, and editing moved from the 2D grid into the 3D
+view along the way. See `docs/PLAN.md`.
 
-Known gap: marquee selection was dropped when the 2D editor was replaced.
-Multi-select is shift-click for now.
+Known gap: marquee selection was dropped when the 2D editor was replaced, since
+a grid rectangle stopped meaning anything in perspective. Multi-select is
+shift-click; a screen-space marquee is the natural replacement.
 
 ## Theme
 
