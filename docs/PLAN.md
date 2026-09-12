@@ -80,13 +80,26 @@ either one piece or four blocks depending on how the game counts them.
 
 `required: true` on the FOB drives build validation (section 6).
 
+### The build region
+
+The FOB does not merely have to exist, it defines where building is allowed.
+The buildable region is the FOB's 3 × 3 footprint expanded by 50 m in every
+horizontal direction, giving a 103 × 103 m square centred on the FOB. Every
+cell of every piece must fall inside it.
+
+This sets the default grid: rather than an arbitrary plot, the grid is the build
+region itself, so the editable area and the legal area are the same thing and
+there is no dead space to scroll through. Before a FOB is placed there is no
+region, so the grid shows a neutral 103 × 103 area and the first FOB placement
+fixes it.
+
 ### The build document
 
 ```js
 {
   schema: 1,
   name: "Forward Outpost",
-  grid: { width: 64, depth: 64, height: 16 },   // in metres
+  grid: { width: 103, depth: 103, height: 16 },  // in metres, sized to the FOB region
   pieces: [
     { id: "p1", type: "bunker", x: 12, y: 7, z: 0, rot: 90 }
   ]
@@ -100,9 +113,9 @@ pointing at the piece id filling it. Used for collision tests, hit-testing under
 the cursor, and support checks. Updated incrementally on every add and remove,
 never by rescanning the build.
 
-A Bunker costs 64 entries. A dense 64 × 64 × 16 build would be 65,536 entries,
-which a `Map` handles without trouble, so the simple approach is the right one
-and a sparse octree is not needed.
+A Bunker costs 64 entries. Even a heavily built region is tens of thousands of
+entries, which a `Map` handles without trouble, so the simple approach is the
+right one and a sparse octree is not needed.
 
 ---
 
@@ -212,6 +225,9 @@ piece draws as a rectangle of its rotated width and depth, filled with its
 catalog colour and labelled when the zoom level allows. `composedOf` parts draw
 their internal seams.
 
+The build region draws as a boundary line with the area outside it dimmed, so
+the limit is visible at all times rather than discovered by a rejected click.
+
 **Tools**
 
 | Tool | Key | Behaviour |
@@ -225,8 +241,9 @@ their internal seams.
 
 - A ghost of the pending piece follows the cursor at its true rotated footprint.
 - Invalid placement renders red and the click is a no-op rather than a silent
-  failure. Invalid means: overlapping an occupied cell, outside the grid, or
-  unsupported.
+  failure. Invalid means: overlapping an occupied cell, outside the build
+  region, or unsupported. The ghost reports which, so a rejected placement is
+  never a mystery.
 - `R` rotates through 0/90/180/270 and the ghost updates immediately. Rotation
   is about the piece's own footprint centre, so a `4 × 1` wall pivots where you
   expect rather than flinging itself across the grid.
@@ -248,10 +265,11 @@ Two levels, both surfaced in a small issues panel rather than by blocking edits.
 
 **Placement rules**, checked live during placement and move:
 
-- Cells must be inside the grid.
 - Cells must be unoccupied.
-- Support: a piece must rest on the ground or on the top face of another piece.
-  This is a toggle, defaulting on, because the game's real rule is unconfirmed.
+- Cells must be inside the build region, the 103 × 103 m square centred on the
+  FOB. The FOB itself is exempt, since it creates the region.
+- Every piece must be supported: each cell of its base must sit on the ground or
+  on the top face of another piece. Floating is not allowed.
 
 **Build rules**, recomputed on change:
 
@@ -259,8 +277,13 @@ Two levels, both surfaced in a small issues panel rather than by blocking edits.
   A build without one shows a persistent warning, since the game will not accept
   the construction.
 
-Making this a data-driven rule rather than a hardcoded FOB check means other
-required or limited elements cost nothing to add later.
+Making this data-driven rather than a hardcoded FOB check means other required
+or limited elements cost nothing to add later.
+
+**Moving or deleting the FOB** shifts the region out from under existing pieces.
+The tool never silently deletes work: affected pieces stay put, are flagged as
+out of region in the issues panel, and can be jumped to from there. The user
+decides whether to move them or move the FOB back.
 
 ---
 
@@ -277,6 +300,9 @@ every instance. A hundred Hesco blocks cost one geometry and one material.
 `composedOf` parts render their sub-blocks with a small gap so the seams read.
 Visual detail beyond boxes (a radar dish on the Air Defense, texture on the
 Hesco gabions) is a Phase 6 pass, deliberately after the tool works.
+
+The build region draws as a translucent boundary on the ground plane, matching
+the 2D pane.
 
 **Camera.** `PerspectiveCamera` with `OrbitControls`, damping on: left-drag
 orbits, scroll zooms, right-drag pans. Plus a **Frame build** button and `Home`
@@ -325,9 +351,9 @@ Each phase ends with something runnable.
 shell, toolbar and palette chrome. No behaviour.
 
 **Phase 1 — Model core.** Catalog loading, `BuildModel`, occupancy index,
-rotation and footprint maths, placement validation, commands and history,
-serialisation. Unit tests for collision, rotated footprints, drop-to-support and
-undo. No UI; this is the layer everything depends on and the cheapest place to
+rotation and footprint maths, placement validation including support and the
+FOB region, commands and history, serialisation. Unit tests for collision,
+rotated footprints, drop-to-support, region containment and undo. No UI; this is the layer everything depends on and the cheapest place to
 get it right.
 
 **Phase 2 — 2D editing.** Grid rendering, pan and zoom, elevation slices with
@@ -354,25 +380,40 @@ are what make it a tool worth returning to.
 
 ## 11. Open questions
 
-None of these block starting. Answers are needed by the phase named.
+Answered so far: elements must be supported and cannot float; the FOB defines a
+buildable square extending 50 m from its footprint in every direction.
 
-1. **Support rule** (Phase 2). Can elements float, or must they rest on the
-   ground or another element? Implemented as a toggle defaulting to required.
-2. **FOB placement radius** (Phase 4). Does the FOB define a build radius that
-   limits where other elements can go? If so it becomes a second build rule and
-   a drawn boundary in both panes.
-3. **Long Hesco Wall accounting** (Phase 6). Does the game count one as a single
-   construction or as four tall blocks? This decides what the parts tally
-   reports. `composedOf` already records both readings.
-4. **More elements** (any time). The catalog has six. Anything else in the game
-   is a JSON entry.
-5. **Default plot size** (Phase 2). The grid defaults to 64 × 64 × 16 m. Does
-   the game have a real buildable area worth matching?
-6. **Element orientation** (Phase 4). Do asymmetric elements have a meaningful
-   facing, for example an Air Defense arc or a bunker entrance, that should be
-   drawn in 2D?
+None of the below block starting. They are ordered by when an answer is needed.
 
----
+1. **Full or partial support** (Phase 1). Must every cell of a piece's base be
+   supported, or is an overhang allowed? A Long Hesco Wall resting on one block
+   with three cells hanging is legal under a partial rule and illegal under a
+   full one. Implemented as full support until told otherwise, because it is the
+   stricter reading and relaxing it later invalidates nothing already drawn.
+2. **Is the ground flat** (Phase 2). The tool models a flat plane. If real
+   terrain is uneven, a plan that works here may not place in game, and the
+   model would need a ground height per cell. This is the single assumption most
+   likely to cause a mismatch with the game.
+3. **Multiple FOBs** (Phase 2). Is more than one allowed in a construction, and
+   if so does each add its own region so the buildable area is the union? This
+   decides whether the region is one square or a merged shape, which changes
+   both the containment test and how the boundary is drawn.
+4. **Maximum build height** (Phase 2). The grid assumes 16 m. Is there a real
+   ceiling, and does the 50 m region have a vertical limit of its own?
+5. **Can anything be stacked on anything** (Phase 2). Does the game allow an Air
+   Defense on a Bunker roof, or are some elements ground-only? A `groundOnly`
+   flag in the catalog covers it if so.
+6. **Element cap or cost** (Phase 4). Is there a limit on how many elements a
+   construction may contain, or a resource budget? Either turns the parts tally
+   from a curiosity into a constraint worth checking against.
+7. **Element facing** (Phase 4). Do asymmetric elements have a meaningful
+   orientation, such as an Air Defense arc or a bunker entrance, that should be
+   drawn in 2D rather than left implicit in the rotation value?
+8. **Long Hesco Wall accounting** (Phase 6). Does the game count one as a single
+   construction or as four tall blocks? `composedOf` already records both
+   readings; this only decides what the tally reports.
+9. **More elements** (any time). The catalog has six. Anything else in the game
+   is a JSON entry, not a code change.
 
 ## 12. Risks
 
@@ -380,6 +421,7 @@ None of these block starting. Answers are needed by the phase named.
 | --- | --- | --- |
 | Catalog does not match the real game | Plans mislead | All part definitions live in `elements.json`; corrections are edits, not refactors |
 | Large builds slow the 3D view | Editing feels laggy | Shared cached geometry and delta sync from the start; `InstancedMesh` batching held in reserve |
-| Stacking rules guessed wrong | Builds are not reproducible in game | Support is a toggle, and question 1 resolves it early |
+| Real terrain is not flat | Plans do not place in game | Question 2 resolves it early; a per-cell ground height is an additive change to the occupancy floor, not a rewrite |
+| Support strictness guessed wrong | Legal builds rejected, or illegal ones accepted | Full support enforced as the stricter reading, relaxable without invalidating existing builds |
 | The two panes disagree about coordinates | Confusing and hard to debug | One shared `gridToWorld()`, unit tested |
 | Touch and small screens | Unusable on tablets | Layout stacks to tabs under a breakpoint; touch handled as a Phase 6 pass, not retrofitted late |

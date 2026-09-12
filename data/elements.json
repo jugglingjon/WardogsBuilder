@@ -2,56 +2,101 @@
   "schema": 1,
   "cellSize": 1,
   "units": "metres",
-  "sizeOrder": ["width", "depth", "height"],
+  "sizeOrder": [
+    "width",
+    "depth",
+    "height"
+  ],
   "categories": [
-    { "id": "command", "name": "Command" },
-    { "id": "fortification", "name": "Fortification" },
-    { "id": "defense", "name": "Defense" }
+    {
+      "id": "command",
+      "name": "Command"
+    },
+    {
+      "id": "fortification",
+      "name": "Fortification"
+    },
+    {
+      "id": "defense",
+      "name": "Defense"
+    }
   ],
   "elements": [
     {
       "id": "fob",
       "name": "FOB",
       "category": "command",
-      "size": [3, 3, 1],
+      "size": [
+        3,
+        3,
+        1
+      ],
       "color": "#4f5b3c",
       "required": true,
-      "notes": "Forward operating base. At least one is required in every construction."
+      "notes": "Forward operating base. At least one is required in every construction, and it defines the buildable region: its footprint expanded by 50m in every horizontal direction.",
+      "buildRegion": {
+        "shape": "square",
+        "marginFromFootprint": 50
+      }
     },
     {
       "id": "hesco_block",
       "name": "Hesco Block",
       "category": "fortification",
-      "size": [1, 1, 1],
+      "size": [
+        1,
+        1,
+        1
+      ],
       "color": "#b9a074"
     },
     {
       "id": "hesco_block_tall",
       "name": "Tall Hesco Block",
       "category": "fortification",
-      "size": [1, 1, 2],
+      "size": [
+        1,
+        1,
+        2
+      ],
       "color": "#b9a074"
     },
     {
       "id": "hesco_wall_long",
       "name": "Long Hesco Wall",
       "category": "fortification",
-      "size": [4, 1, 2],
+      "size": [
+        4,
+        1,
+        2
+      ],
       "color": "#b9a074",
-      "composedOf": { "element": "hesco_block_tall", "count": 4, "axis": "width" }
+      "composedOf": {
+        "element": "hesco_block_tall",
+        "count": 4,
+        "axis": "width"
+      }
     },
     {
       "id": "bunker",
       "name": "Bunker",
       "category": "fortification",
-      "size": [4, 4, 4],
+      "size": [
+        4,
+        4,
+        4
+      ],
       "color": "#6f7276"
     },
     {
       "id": "air_defense",
       "name": "Air Defense",
       "category": "defense",
-      "size": [3, 3, 1],
+      "size": [
+        3,
+        3,
+        1
+      ],
       "color": "#3f5464"
     }
   ]
