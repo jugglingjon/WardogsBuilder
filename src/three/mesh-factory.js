@@ -132,45 +132,36 @@ const SHAPES = {
     )];
   },
 
-  /** A shaft with a platform halfway up and a pointed roof on top. */
+  /**
+   * A guard tower reduced to its three readable parts: four corner uprights, a
+   * platform halfway up, and a pitched roof sitting on top of the posts.
+   *
+   * The roof is a four-sided cone turned 45 degrees so its base squares up with
+   * the footprint. A cone's radius reaches its corners, so the radius has to be
+   * the half-diagonal for the base to span the full width.
+   */
   tower(w, h, d) {
-    const roof = h * 0.12;
-    const deck = h * 0.05;
-    const shaft = Math.min(w, d) * 0.5;
-    const shaftHeight = h - roof;
+    const roof = h * 0.1;
+    const deck = h * 0.07;
+    const post = Math.min(w, d) * 0.12;
+    const postHeight = h - roof;
+
+    // One geometry shared by all four uprights.
+    const upright = new THREE.BoxGeometry(post, postHeight, post);
+    const inset = [(w - post) / 2, (d - post) / 2];
+    const postY = -h / 2 + postHeight / 2;
+
     return [
-      part(new THREE.BoxGeometry(shaft, shaftHeight, shaft), [0, -h / 2 + shaftHeight / 2, 0]),
+      part(upright, [-inset[0], postY, -inset[1]]),
+      part(upright, [inset[0], postY, -inset[1]]),
+      part(upright, [-inset[0], postY, inset[1]]),
+      part(upright, [inset[0], postY, inset[1]]),
       part(new THREE.BoxGeometry(w, deck, d)), // halfway up, the full footprint
       part(
-        // Four sides turned to square up with the shaft below it.
-        new THREE.ConeGeometry(Math.min(w, d) * 0.45, roof, 4).rotateY(Math.PI / 4),
+        new THREE.ConeGeometry(Math.min(w, d) * 0.5 * Math.SQRT2, roof, 4).rotateY(Math.PI / 4),
         [0, h / 2 - roof / 2, 0]
       )
     ];
-  },
-
-  /**
-   * Three crossing beams, tilted 45 degrees about X and Z so the star rests on
-   * its points the way a real anti-tank hedgehog does, rather than standing up
-   * as a plus sign. The tilt pulls every point inside the box, and the whole
-   * assembly is then dropped so its lowest point sits on the floor.
-   */
-  hedgehog(w, h, d) {
-    const t = Math.min(w, h, d) * 0.16;
-    const tilt = (geometry) => geometry.rotateX(Math.PI / 4).rotateZ(Math.PI / 4);
-    const beams = [
-      tilt(new THREE.BoxGeometry(w, t, t)),
-      tilt(new THREE.BoxGeometry(t, h, t)),
-      tilt(new THREE.BoxGeometry(t, t, d))
-    ];
-
-    let lowest = Infinity;
-    for (const geometry of beams) {
-      geometry.computeBoundingBox();
-      lowest = Math.min(lowest, geometry.boundingBox.min.y);
-    }
-    const rest = -h / 2 - lowest;
-    return beams.map((geometry) => part(geometry, [0, rest, 0]));
   },
 
   /** A coil running along the piece's longer horizontal axis. */
