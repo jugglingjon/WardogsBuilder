@@ -14,11 +14,16 @@
     grid-template-rows: auto minmax(0, 1fr);
   }
 
+  /* The rail becomes a row here, and its own content is tall enough to eat the
+     whole window on a short one, leaving the 3D view no height at all. Cap it
+     at the breakpoint rather than only on phones. */
   .rail {
     flex-direction: row;
     overflow-x: auto;
     border-right: 0;
     border-bottom: 1px solid var(--c-line);
+    max-height: 34vh;
+    flex: none;
   }
 
   .rail__section { border-bottom: 0; border-right: 1px solid var(--c-line); min-width: 220px; }
@@ -38,7 +43,6 @@
   .toolbar__brand { display: none; }
   .toolbar { gap: 8px; }
   .field { min-width: 110px; }
-  .rail { max-height: 32vh; }
   .pane__header { height: auto; flex-wrap: wrap; gap: 6px; padding: 6px 10px; }
   .status { flex: 1 0 100%; justify-content: flex-start; }
   .empty-state { left: 10px; right: 10px; bottom: 12px; transform: none; }

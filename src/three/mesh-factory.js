@@ -149,14 +149,28 @@ const SHAPES = {
     ];
   },
 
-  /** Three crossing beams: six points, like a real anti-tank hedgehog. */
+  /**
+   * Three crossing beams, tilted 45 degrees about X and Z so the star rests on
+   * its points the way a real anti-tank hedgehog does, rather than standing up
+   * as a plus sign. The tilt pulls every point inside the box, and the whole
+   * assembly is then dropped so its lowest point sits on the floor.
+   */
   hedgehog(w, h, d) {
     const t = Math.min(w, h, d) * 0.16;
-    return [
-      part(new THREE.BoxGeometry(w, t, t)),
-      part(new THREE.BoxGeometry(t, h, t)),
-      part(new THREE.BoxGeometry(t, t, d))
+    const tilt = (geometry) => geometry.rotateX(Math.PI / 4).rotateZ(Math.PI / 4);
+    const beams = [
+      tilt(new THREE.BoxGeometry(w, t, t)),
+      tilt(new THREE.BoxGeometry(t, h, t)),
+      tilt(new THREE.BoxGeometry(t, t, d))
     ];
+
+    let lowest = Infinity;
+    for (const geometry of beams) {
+      geometry.computeBoundingBox();
+      lowest = Math.min(lowest, geometry.boundingBox.min.y);
+    }
+    const rest = -h / 2 - lowest;
+    return beams.map((geometry) => part(geometry, [0, rest, 0]));
   },
 
   /** A coil running along the piece's longer horizontal axis. */
