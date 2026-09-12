@@ -36,8 +36,9 @@ npm run build    # production bundle into dist/
 
 ## Status
 
-Phases 0 to 2 are complete: the shell, the tested model core, and the 2D grid
-editor. The 3D view is phase 3. See `docs/PLAN.md`.
+Phases 0 to 3 are complete: the shell, the tested model core, the 2D grid
+editor, and the 3D view. Phase 4 adds drag to move, marquee selection, copy and
+paste, and slice clipping in 3D. See `docs/PLAN.md`.
 
 ## Using the plan pane
 
@@ -53,6 +54,12 @@ editor. The 3D view is phase 3. See `docs/PLAN.md`.
 | Frame the build | `Home`, or the Fit button |
 | Change elevation | `PageUp` and `PageDown` |
 | Pin to the current slice | Hold `Alt` while placing |
+
+## Using the view pane
+
+Drag to orbit, scroll to zoom, right-drag to pan. Top, Front and Corner jump to
+preset viewpoints and Frame fits the camera to the build. Clicking a piece
+selects it and moves the plan pane to that piece's elevation.
 
 ## Theme
 

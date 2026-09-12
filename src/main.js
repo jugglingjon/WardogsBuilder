@@ -11,6 +11,10 @@ import { catalog } from './model/catalog.js';
 import { Camera2D } from './editor/camera2d.js';
 import { GridRenderer } from './editor/grid-renderer.js';
 import { EditorController, TOOLS } from './editor/controller.js';
+import { SceneView } from './three/scene.js';
+import { MeshFactory } from './three/mesh-factory.js';
+import { SceneSync } from './three/sync.js';
+import { bindPicking } from './three/picking.js';
 import { Toolbar } from './ui/toolbar.js';
 import { Palette } from './ui/palette.js';
 import { IssuesPanel, TallyPanel, StatsPanel } from './ui/panels.js';
@@ -59,13 +63,18 @@ app.innerHTML = `
       <section class="pane">
         <div class="pane__header">
           <span class="label">View</span>
-          <span class="label">Orbit · zoom · pan</span>
-        </div>
-        <div class="pane__body">
-          <div class="pane__placeholder">
-            <strong>3D preview</strong>
-            <span>Phase 3: live box geometry with an orbit camera</span>
+          <span class="status">
+            <span class="label">Drag to orbit · scroll to zoom</span>
+          </span>
+          <div class="toolbar__group">
+            <button class="btn" data-view="top">Top</button>
+            <button class="btn" data-view="front">Front</button>
+            <button class="btn" data-view="corner">Corner</button>
+            <button class="btn" id="frame-view" title="Frame the build">Frame</button>
           </div>
+        </div>
+        <div class="pane__body" id="view-body">
+          <canvas id="view-canvas"></canvas>
         </div>
       </section>
     </div>
@@ -119,11 +128,47 @@ new IssuesPanel(document.querySelector('#issues'), {
 new TallyPanel(document.querySelector('#tally'), { model });
 new StatsPanel(document.querySelector('#stats'), { model });
 
+// --- the 3D view ------------------------------------------------------------
+
+const viewCanvas = document.querySelector('#view-canvas');
+const view = new SceneView(viewCanvas, { model });
+const sync = new SceneSync({ model, view, factory: new MeshFactory(catalog) });
+
+const frameBuild = () => view.frame(model.count ? sync.bounds() : null);
+document.querySelector('#frame-view').addEventListener('click', frameBuild);
+for (const button of document.querySelectorAll('[data-view]')) {
+  button.addEventListener('click', () => view.view(button.dataset.view));
+}
+
+// Selecting in 3D brings the plan pane to that piece's elevation, so the two
+// panes never disagree about what you are looking at.
+bindPicking(viewCanvas, {
+  model,
+  view,
+  onPick: (id) => {
+    const piece = model.piece(id);
+    if (piece) model.setSlice(piece.z);
+  }
+});
+
+new ResizeObserver(([entry]) => {
+  view.resize(entry.contentRect.width, entry.contentRect.height);
+}).observe(document.querySelector('#view-body'));
+
 bindShortcuts({ model, history });
 document.querySelector('#fit-plan').addEventListener('click', () => controller.fit());
 
 const updateEmptyState = () => { emptyState.hidden = model.count > 0; };
 model.on('change', updateEmptyState);
+
+// Frame the 3D camera on the first piece placed, so the view is never left
+// staring at empty ground.
+let autoFramed = false;
+model.on('piece:add', () => {
+  if (autoFramed) return;
+  autoFramed = true;
+  queueMicrotask(frameBuild);
+});
 
 // Size the canvas to its pane, and frame the site on first layout.
 const body = document.querySelector('#plan-body');
@@ -143,4 +188,4 @@ palette.select('fob');
 updateEmptyState();
 
 // Exposed for inspection from the console while the tool is being built.
-window.wardogs = { model, history, catalog, camera, controller, seedSampleBuild };
+window.wardogs = { model, history, catalog, camera, controller, view, sync, seedSampleBuild };

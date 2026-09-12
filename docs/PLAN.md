@@ -337,9 +337,10 @@ key that fits the camera to the bounding box of all pieces, preset top, front
 and corner views, and a **slice clip** toggle that hides everything above the
 current 2D slice so you can see inside a bunker while working on it.
 
-**Selection linking.** Selecting in 2D highlights the piece in 3D. Clicking a
-mesh in 3D raycasts to a piece id, selects it in the model, and the 2D pane
-scrolls it into view. This is what makes the two panes feel like one tool
+**Selection linking.** Selecting in 2D highlights the piece in 3D with an
+outline box, which keeps the shared materials untouched. Clicking a mesh in 3D
+raycasts to a piece id, selects it in the model, and moves the plan pane to that
+piece's elevation. This is what makes the two panes feel like one tool
 rather than an editor next to a screenshot.
 
 ---
@@ -374,7 +375,7 @@ The client is designed to work fully without it.
 
 Each phase ends with something runnable.
 
-Phases 0 to 2 are complete as of the current branch.
+Phases 0 to 3 are complete as of the current branch.
 
 **Phase 0 — Scaffold.** ✅ Vite project, SCSS pipeline, two-pane responsive layout
 shell, toolbar and palette chrome. No behaviour.
@@ -389,7 +390,7 @@ get it right.
 the below/above layers, palette selection, place and delete, ghost preview,
 validity feedback. At this point the tool is usable as a 2D-only planner.
 
-**Phase 3 — 3D view.** Scene, box meshes, delta sync, OrbitControls, frame
+**Phase 3 — 3D view.** ✅ Scene, box meshes, delta sync, OrbitControls, frame
 build. The first build where the core promise is visible.
 
 **Phase 4 — Full editing.** Selection and marquee, drag to move, rotate, copy

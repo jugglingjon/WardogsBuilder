@@ -125,3 +125,10 @@
 .status__warn { color: var(--c-warning); }
 
 .pane__header .btn { padding: 3px 9px; }
+
+#view-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
