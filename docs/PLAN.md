@@ -367,10 +367,12 @@ The client is designed to work fully without it.
 
 Each phase ends with something runnable.
 
-**Phase 0 — Scaffold.** Vite project, SCSS pipeline, two-pane responsive layout
+Phases 0 and 1 are complete as of the current branch.
+
+**Phase 0 — Scaffold.** ✅ Vite project, SCSS pipeline, two-pane responsive layout
 shell, toolbar and palette chrome. No behaviour.
 
-**Phase 1 — Model core.** Catalog loading, `BuildModel`, occupancy index,
+**Phase 1 — Model core.** ✅ Catalog loading, `BuildModel`, occupancy index,
 rotation and footprint maths, placement validation including support and the
 FOB region, commands and history, serialisation. Unit tests for collision,
 rotated footprints, drop-to-support, region containment and undo. No UI; this is the layer everything depends on and the cheapest place to
