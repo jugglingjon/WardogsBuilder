@@ -53,14 +53,19 @@ cannot drift apart.
 Every building element is data in `data/elements.json`, seeded with the six
 known elements. Adding a part is an edit to that file, not a code change.
 
-| Element | Size (w × d × h) | Notes |
-| --- | --- | --- |
-| FOB | 3 × 3 × 1 | Required in every construction |
-| Hesco Block | 1 × 1 × 1 | |
-| Tall Hesco Block | 1 × 1 × 2 | |
-| Long Hesco Wall | 4 × 1 × 2 | Four tall Hesco blocks in a row |
-| Bunker | 4 × 4 × 4 | |
-| Air Defense | 3 × 3 × 1 | |
+| Element | Size (w × d × h) | Cost | Can support | Notes |
+| --- | --- | --- | --- | --- |
+| FOB | 3 × 3 × 1 | 250\* | no | Exactly one per construction; defines the build region |
+| Hesco Block | 1 × 1 × 1 | 10 | yes | |
+| Tall Hesco Block | 1 × 1 × 2 | 20 | yes | |
+| Long Hesco Wall | 4 × 1 × 2 | 80 | yes | Four tall Hesco blocks in a row |
+| Bunker | 4 × 4 × 4 | 500\* | yes | |
+| Air Defense | 3 × 3 × 1 | 300\* | no | 360°, no firing arc |
+
+Cost is building material. Values marked \* are placeholders and will change;
+the catalog flags them with `costPlaceholder` so the tally can mark them rather
+than presenting a guess as fact. The Hesco costs are internally consistent by
+construction: a tall block is two blocks, a long wall is four tall blocks.
 
 ```json
 {
@@ -78,7 +83,10 @@ its place twice: the renderers draw the seams between the four blocks instead of
 one undifferentiated slab, and the parts tally can report a Long Hesco Wall as
 either one piece or four blocks depending on how the game counts them.
 
-`required: true` on the FOB drives build validation (section 6).
+Three further fields drive validation and reporting, all of them data rather
+than code: `canSupport` marks the elements that others may stack on, `cost`
+gives the building material price, and `required` with `maxCount: 1` pins the
+FOB to exactly one per construction.
 
 ### The build region
 
@@ -200,6 +208,7 @@ command object, so undo and redo are uniform.
 │   │   ├── toolbar.js         # tools, elevation slice, undo/redo
 │   │   ├── inspector.js       # selected piece properties
 │   │   ├── issues.js          # validation warnings panel
+│   │   ├── tally.js           # element counts and material cost
 │   │   └── shortcuts.js
 │   └── styles/
 └── tests/
@@ -268,14 +277,25 @@ Two levels, both surfaced in a small issues panel rather than by blocking edits.
 - Cells must be unoccupied.
 - Cells must be inside the build region, the 103 × 103 m square centred on the
   FOB. The FOB itself is exempt, since it creates the region.
-- Every piece must be supported: each cell of its base must sit on the ground or
-  on the top face of another piece. Floating is not allowed.
+- Cells must be at or below the 16 m build ceiling.
+- **Support.** Every cell of a piece's base must rest on either the ground or
+  the top face of a supporting element, with no exceptions and no overhang. A
+  piece half on a block and half over air is rejected.
+- **Only Hesco blocks of any type and the Bunker can support.** Nothing stacks
+  on a FOB or an Air Defense. This is the `canSupport` flag, so the rule is a
+  catalog edit if the game says otherwise.
+
+The reading of the support rule is that the chain must bottom out on the ground:
+a piece rests on supporting elements, which themselves rest on supporting
+elements or on the ground. An Air Defense at height therefore needs a full 3 × 3
+of supporting tops at one level, nine tall Hesco blocks or a Bunker roof.
 
 **Build rules**, recomputed on change:
 
-- At least one FOB must be present, driven by `required: true` in the catalog.
+- Exactly one FOB, driven by `required: true` and `maxCount: 1` in the catalog.
   A build without one shows a persistent warning, since the game will not accept
-  the construction.
+  the construction. Attempting to place a second offers to move the existing one
+  instead, which is what the user meant anyway.
 
 Making this data-driven rather than a hardcoded FOB check means other required
 or limited elements cost nothing to add later.
@@ -366,10 +386,11 @@ build. The first build where the core promise is visible.
 **Phase 4 — Full editing.** Selection and marquee, drag to move, rotate, copy
 and paste, slice clipping in 3D, click-to-select in 3D, the issues panel.
 
-**Phase 5 — Persistence.** Autosave, named saves, import and export, share link,
-screenshot.
+**Phase 5 — Persistence and reporting.** Autosave, named saves, import and
+export, share link, screenshot, and the tally panel: element counts and total
+building material cost, with placeholder costs visibly marked.
 
-**Phase 6 — Polish.** Shortcut overlay, parts tally, empty-state hints, element
+**Phase 6 — Polish.** Shortcut overlay, empty-state hints, element
 visual detail, touch support, contrast pass, performance pass against a
 deliberately large build.
 
@@ -378,42 +399,37 @@ are what make it a tool worth returning to.
 
 ---
 
-## 11. Open questions
+## 11. Decisions and remaining unknowns
 
-Answered so far: elements must be supported and cannot float; the FOB defines a
-buildable square extending 50 m from its footprint in every direction.
+Every question that blocked design has been answered. Recorded here so the
+reasoning behind the rules is not lost:
 
-None of the below block starting. They are ordered by when an answer is needed.
+| Question | Answer |
+| --- | --- |
+| Can elements float? | No. Every base cell must be supported |
+| Partial support or full? | Full. No overhangs |
+| What can support? | Hesco blocks of any type, and the Bunker. Nothing else |
+| Is the ground flat? | Yes, for this tool's purposes |
+| How many FOBs? | Exactly one |
+| Build region | The FOB footprint plus 50 m in every direction, 103 × 103 m |
+| Build height limit | 16 m |
+| Resource budget | None, but every element carries a building material cost |
+| Air Defense firing arc | None, 360°, so its rotation is cosmetic |
 
-1. **Full or partial support** (Phase 1). Must every cell of a piece's base be
-   supported, or is an overhang allowed? A Long Hesco Wall resting on one block
-   with three cells hanging is legal under a partial rule and illegal under a
-   full one. Implemented as full support until told otherwise, because it is the
-   stricter reading and relaxing it later invalidates nothing already drawn.
-2. **Is the ground flat** (Phase 2). The tool models a flat plane. If real
-   terrain is uneven, a plan that works here may not place in game, and the
-   model would need a ground height per cell. This is the single assumption most
-   likely to cause a mismatch with the game.
-3. **Multiple FOBs** (Phase 2). Is more than one allowed in a construction, and
-   if so does each add its own region so the buildable area is the union? This
-   decides whether the region is one square or a merged shape, which changes
-   both the containment test and how the boundary is drawn.
-4. **Maximum build height** (Phase 2). The grid assumes 16 m. Is there a real
-   ceiling, and does the 50 m region have a vertical limit of its own?
-5. **Can anything be stacked on anything** (Phase 2). Does the game allow an Air
-   Defense on a Bunker roof, or are some elements ground-only? A `groundOnly`
-   flag in the catalog covers it if so.
-6. **Element cap or cost** (Phase 4). Is there a limit on how many elements a
-   construction may contain, or a resource budget? Either turns the parts tally
-   from a curiosity into a constraint worth checking against.
-7. **Element facing** (Phase 4). Do asymmetric elements have a meaningful
-   orientation, such as an Air Defense arc or a bunker entrance, that should be
-   drawn in 2D rather than left implicit in the rotation value?
-8. **Long Hesco Wall accounting** (Phase 6). Does the game count one as a single
-   construction or as four tall blocks? `composedOf` already records both
-   readings; this only decides what the tally reports.
-9. **More elements** (any time). The catalog has six. Anything else in the game
-   is a JSON entry, not a code change.
+**Still unknown, none of it blocking:**
+
+1. **Real cost values.** Only the Hesco family is confirmed, anchored on 10 for
+   a basic block. FOB, Bunker and Air Defense carry placeholders flagged in the
+   catalog. Replacing them is a JSON edit.
+2. **The full element list.** Six elements are modelled. Anything else in the
+   game is another catalog entry.
+3. **Long Hesco Wall accounting.** Whether the game counts one as a single
+   construction or as four tall blocks. It affects only what the tally reports,
+   and `composedOf` already records both readings.
+4. **Whether rotation matters for any element.** All six are currently
+   rotationally symmetric or unfacing, so rotation only matters for the shape of
+   the 4 × 1 wall. If a later element has a front, `facing` in the catalog is
+   where it goes.
 
 ## 12. Risks
 
@@ -421,7 +437,7 @@ None of the below block starting. They are ordered by when an answer is needed.
 | --- | --- | --- |
 | Catalog does not match the real game | Plans mislead | All part definitions live in `elements.json`; corrections are edits, not refactors |
 | Large builds slow the 3D view | Editing feels laggy | Shared cached geometry and delta sync from the start; `InstancedMesh` batching held in reserve |
-| Real terrain is not flat | Plans do not place in game | Question 2 resolves it early; a per-cell ground height is an additive change to the occupancy floor, not a rewrite |
-| Support strictness guessed wrong | Legal builds rejected, or illegal ones accepted | Full support enforced as the stricter reading, relaxable without invalidating existing builds |
+| Placeholder costs read as authoritative | Users plan against invented numbers | `costPlaceholder` in the catalog; the tally marks them rather than showing a bare figure |
+| Support rules change once the game is checked | Existing builds become invalid | `canSupport` is catalog data and the validator reports rather than deletes, so a rule change flags affected pieces instead of destroying work |
 | The two panes disagree about coordinates | Confusing and hard to debug | One shared `gridToWorld()`, unit tested |
 | Touch and small screens | Unusable on tablets | Layout stacks to tabs under a breakpoint; touch handled as a Phase 6 pass, not retrofitted late |

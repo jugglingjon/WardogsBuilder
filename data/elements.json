@@ -32,12 +32,17 @@
         1
       ],
       "color": "#4f5b3c",
+      "cost": 250,
+      "costPlaceholder": true,
+      "canSupport": false,
+      "facing": "none",
       "required": true,
-      "notes": "Forward operating base. At least one is required in every construction, and it defines the buildable region: its footprint expanded by 50m in every horizontal direction.",
+      "maxCount": 1,
       "buildRegion": {
         "shape": "square",
         "marginFromFootprint": 50
-      }
+      },
+      "notes": "Forward operating base. At least one is required in every construction, and it defines the buildable region: its footprint expanded by 50m in every horizontal direction."
     },
     {
       "id": "hesco_block",
@@ -48,7 +53,11 @@
         1,
         1
       ],
-      "color": "#b9a074"
+      "color": "#b9a074",
+      "cost": 10,
+      "costPlaceholder": false,
+      "canSupport": true,
+      "facing": "none"
     },
     {
       "id": "hesco_block_tall",
@@ -59,7 +68,11 @@
         1,
         2
       ],
-      "color": "#b9a074"
+      "color": "#b9a074",
+      "cost": 20,
+      "costPlaceholder": false,
+      "canSupport": true,
+      "facing": "none"
     },
     {
       "id": "hesco_wall_long",
@@ -71,6 +84,10 @@
         2
       ],
       "color": "#b9a074",
+      "cost": 80,
+      "costPlaceholder": false,
+      "canSupport": true,
+      "facing": "none",
       "composedOf": {
         "element": "hesco_block_tall",
         "count": 4,
@@ -86,7 +103,11 @@
         4,
         4
       ],
-      "color": "#6f7276"
+      "color": "#6f7276",
+      "cost": 500,
+      "costPlaceholder": true,
+      "canSupport": true,
+      "facing": "none"
     },
     {
       "id": "air_defense",
@@ -97,7 +118,13 @@
         3,
         1
       ],
-      "color": "#3f5464"
+      "color": "#3f5464",
+      "cost": 300,
+      "costPlaceholder": true,
+      "canSupport": false,
+      "facing": "none",
+      "notes": "360 degree coverage, no firing arc, so rotation is cosmetic."
     }
-  ]
+  ],
+  "costUnits": "building material"
 }
