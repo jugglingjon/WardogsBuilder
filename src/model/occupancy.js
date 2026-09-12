@@ -26,6 +26,11 @@ export class Occupancy {
     }
   }
 
+  /** Claim a single cell. Used when projecting a proposed edit. */
+  set(x, y, z, pieceId) {
+    this.#cells.set(keyOf(x, y, z), pieceId);
+  }
+
   /** The id of the piece filling a cell, or null. */
   at(x, y, z) {
     return this.#cells.get(keyOf(x, y, z)) ?? null;

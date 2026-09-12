@@ -64,12 +64,13 @@ app.innerHTML = `
         <div class="pane__header">
           <span class="label">View</span>
           <span class="status">
-            <span class="label">Drag to orbit · scroll to zoom</span>
+            <span class="label">Orbit · zoom · pan</span>
           </span>
           <div class="toolbar__group">
             <button class="btn" data-view="top">Top</button>
             <button class="btn" data-view="front">Front</button>
             <button class="btn" data-view="corner">Corner</button>
+            <button class="btn" id="clip-view" title="Cut the view off above the current elevation">Clip</button>
             <button class="btn" id="frame-view" title="Frame the build">Frame</button>
           </div>
         </div>
@@ -133,6 +134,11 @@ new StatsPanel(document.querySelector('#stats'), { model });
 const viewCanvas = document.querySelector('#view-canvas');
 const view = new SceneView(viewCanvas, { model });
 const sync = new SceneSync({ model, view, factory: new MeshFactory(catalog) });
+
+const clipButton = document.querySelector('#clip-view');
+clipButton.addEventListener('click', () => {
+  clipButton.classList.toggle('is-active', view.setClip(!view.clipping));
+});
 
 const frameBuild = () => view.frame(model.count ? sync.bounds() : null);
 document.querySelector('#frame-view').addEventListener('click', frameBuild);

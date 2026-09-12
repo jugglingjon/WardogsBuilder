@@ -36,16 +36,18 @@ npm run build    # production bundle into dist/
 
 ## Status
 
-Phases 0 to 3 are complete: the shell, the tested model core, the 2D grid
-editor, and the 3D view. Phase 4 adds drag to move, marquee selection, copy and
-paste, and slice clipping in 3D. See `docs/PLAN.md`.
+Phases 0 to 4 are complete: the shell, the tested model core, the 2D grid
+editor, the 3D view, and full editing. Phase 5 adds saving, sharing and the
+material tally as a first-class panel. See `docs/PLAN.md`.
 
 ## Using the plan pane
 
 | Action | How |
 | --- | --- |
 | Place | Pick an element, click, or drag to paint a run |
-| Select | `V`, then click. Shift-click to add |
+| Select | `V`, then click. Shift-click to add. Drag empty ground for a marquee |
+| Move | Drag a selection. It commits on release, as one undo step |
+| Copy, paste, duplicate | `Ctrl+C`, `Ctrl+V`, `Ctrl+D`. The group drops onto whatever is under it |
 | Erase | `E`, then click or drag |
 | Rotate | `R`, on the pending piece or the selection |
 | Delete | `Delete` on a selection |
@@ -59,7 +61,8 @@ paste, and slice clipping in 3D. See `docs/PLAN.md`.
 
 Drag to orbit, scroll to zoom, right-drag to pan. Top, Front and Corner jump to
 preset viewpoints and Frame fits the camera to the build. Clicking a piece
-selects it and moves the plan pane to that piece's elevation.
+selects it and moves the plan pane to that piece's elevation. Clip cuts the view
+off above the current elevation, so you can see inside a bunker.
 
 ## Theme
 

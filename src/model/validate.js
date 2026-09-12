@@ -6,6 +6,7 @@
  * on change and surfaced in the issues panel rather than blocking edits.
  */
 import { boundsOf, baseCellsOf, cellsOf, rotatedSize } from './geometry.js';
+import { Occupancy } from './occupancy.js';
 
 export const REASON = {
   OUT_OF_GRID: 'out-of-grid',
@@ -87,10 +88,12 @@ function isSupportedAt(model, piece, element) {
  * Can this piece sit here? Returns every reason it cannot, not just the first,
  * so the placement ghost can explain itself.
  *
- * `ignoreId` excludes a piece from collision against itself, which is what
- * makes dragging a piece one cell work.
+ * `ignoreId` and `ignore` exclude pieces from the collision test, which is what
+ * makes nudging a piece, or a whole selection, one cell work.
  */
-export function canPlace(model, piece, { ignoreId = null } = {}) {
+export function canPlace(model, piece, { ignoreId = null, ignore = null } = {}) {
+  const ignored = ignore instanceof Set ? ignore : new Set(ignore ?? []);
+  if (ignoreId) ignored.add(ignoreId);
   const element = model.catalog.get(piece.type);
   const reasons = new Set();
   const b = boundsOf(piece, element);
@@ -110,7 +113,7 @@ export function canPlace(model, piece, { ignoreId = null } = {}) {
 
   for (const [x, y, z] of cellsOf(piece, element)) {
     const occupantId = model.occupancy.at(x, y, z);
-    if (occupantId && occupantId !== ignoreId && occupantId !== piece.id) {
+    if (occupantId && !ignored.has(occupantId) && occupantId !== piece.id) {
       reasons.add(REASON.OCCUPIED);
       break;
     }
@@ -118,7 +121,7 @@ export function canPlace(model, piece, { ignoreId = null } = {}) {
 
   if (element.maxCount != null) {
     const existing = model.pieces()
-      .filter((p) => p.type === piece.type && p.id !== piece.id && p.id !== ignoreId);
+      .filter((p) => p.type === piece.type && p.id !== piece.id && !ignored.has(p.id));
     if (existing.length >= element.maxCount) reasons.add(REASON.DUPLICATE);
   }
 
@@ -158,6 +161,84 @@ export function dropZ(model, piece, ceiling = model.grid.height) {
  */
 export function restingZ(model, piece) {
   return dropZ(model, piece);
+}
+
+/**
+ * A read-only stand-in for the model as it would be after an edit, so a
+ * proposed move or paste can be validated by exactly the same rules that
+ * validate a real placement. Nothing is mutated and no events fire.
+ */
+function projected(model, pieces) {
+  const byId = new Map(pieces.map((p) => [p.id, p]));
+  const occupancy = new Occupancy();
+  const elementOf = (piece) => model.catalog.get(piece.type);
+
+  // Claim cells first come first served and record every clash. Letting a later
+  // piece overwrite the cell would hide the collision from both of them.
+  const conflicts = new Set();
+  for (const piece of pieces) {
+    for (const [x, y, z] of cellsOf(piece, elementOf(piece))) {
+      const owner = occupancy.at(x, y, z);
+      if (owner) {
+        conflicts.add(owner);
+        conflicts.add(piece.id);
+      } else {
+        occupancy.set(x, y, z, piece.id);
+      }
+    }
+  }
+
+  return {
+    conflicts,
+    model: {
+      catalog: model.catalog,
+      grid: model.grid,
+      occupancy,
+      elementOf,
+      pieces: () => pieces,
+      piece: (id) => byId.get(id) ?? null
+    }
+  };
+}
+
+/**
+ * Could this selection be translated by this offset?
+ *
+ * Validated as a rigid body against a projection of the whole build, so pieces
+ * that support each other keep supporting each other through the move, and the
+ * region moves with the FOB if the FOB is part of the selection.
+ */
+export function canMove(model, ids, { dx = 0, dy = 0, dz = 0 } = {}) {
+  const moving = new Set(ids);
+  const pieces = model.pieces().map((piece) => moving.has(piece.id)
+    ? { ...piece, x: piece.x + dx, y: piece.y + dy, z: piece.z + dz }
+    : piece);
+  const { model: virtual, conflicts } = projected(model, pieces);
+
+  const reasons = new Set();
+  for (const id of moving) {
+    const piece = virtual.piece(id);
+    if (!piece) continue;
+    if (conflicts.has(id)) reasons.add(REASON.OCCUPIED);
+    for (const reason of canPlace(virtual, piece).reasons) reasons.add(reason);
+  }
+  return { ok: reasons.size === 0, reasons: [...reasons] };
+}
+
+/**
+ * Could all of these pieces be added at once? Used by paste, which has to be
+ * all or nothing: half a pasted structure is worse than none.
+ */
+export function canPlaceAll(model, specs) {
+  const proposed = specs.map((spec, i) => ({ id: `__paste${i}__`, rot: 0, ...spec }));
+  const { model: virtual, conflicts } = projected(model, [...model.pieces(), ...proposed]);
+
+  const reasons = new Set();
+  for (const piece of proposed) {
+    if (conflicts.has(piece.id)) reasons.add(REASON.OCCUPIED);
+    for (const reason of canPlace(virtual, piece).reasons) reasons.add(reason);
+  }
+  return { ok: reasons.size === 0, reasons: [...reasons] };
 }
 
 /** Build-level rules, recomputed on change and shown in the issues panel. */

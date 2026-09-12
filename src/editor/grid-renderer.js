@@ -38,7 +38,9 @@ export class GridRenderer {
     this.model = model;
     this.camera = camera;
     this.theme = readTheme();
-    this.ghost = null; // { piece, valid, reasons }
+    this.ghost = null;        // { piece, valid }
+    this.marquee = null;      // a grid-space rect being dragged out
+    this.movePreview = null;  // { ids, delta, valid }
     this.dpr = 1;
 
     for (const event of ['change', 'slice:change', 'selection:change', 'reset']) {
@@ -48,6 +50,16 @@ export class GridRenderer {
 
   setGhost(ghost) {
     this.ghost = ghost;
+    this.invalidate();
+  }
+
+  setMarquee(rect) {
+    this.marquee = rect;
+    this.invalidate();
+  }
+
+  setMovePreview(preview) {
+    this.movePreview = preview;
     this.invalidate();
   }
 
@@ -82,7 +94,9 @@ export class GridRenderer {
     this.#drawGrid();
     this.#drawRegion();
     this.#drawPieces();
+    this.#drawMovePreview();
     this.#drawGhost();
+    this.#drawMarquee();
   }
 
   // --- layers ---------------------------------------------------------------
@@ -266,6 +280,48 @@ export class GridRenderer {
     ctx.strokeStyle = theme.accent;
     ctx.lineWidth = 2;
     ctx.strokeRect(a.px - 1, a.py - 1, w + 2, d + 2);
+    ctx.restore();
+  }
+
+  /** Where the selection would land, checked live against the same rules. */
+  #drawMovePreview() {
+    if (!this.movePreview) return;
+    const { ids, delta, valid } = this.movePreview;
+    if (!delta.dx && !delta.dy) return;
+    const { ctx, camera, model, theme } = this;
+
+    ctx.save();
+    ctx.strokeStyle = valid ? theme.accent : theme.danger;
+    ctx.setLineDash([5, 4]);
+    ctx.lineWidth = 1.5;
+    for (const id of ids) {
+      const piece = model.piece(id);
+      if (!piece) continue;
+      const b = boundsOf(piece, model.elementOf(piece));
+      const a = camera.gridToScreen(b.x0 + delta.dx, b.y0 + delta.dy);
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = valid ? model.elementOf(piece).color : theme.danger;
+      ctx.fillRect(a.px, a.py, b.w * camera.scale, b.d * camera.scale);
+      ctx.globalAlpha = 1;
+      ctx.strokeRect(a.px + 0.5, a.py + 0.5, b.w * camera.scale - 1, b.d * camera.scale - 1);
+    }
+    ctx.restore();
+  }
+
+  #drawMarquee() {
+    if (!this.marquee) return;
+    const { ctx, camera, theme } = this;
+    const a = camera.gridToScreen(this.marquee.x0, this.marquee.y0);
+    const b = camera.gridToScreen(this.marquee.x1, this.marquee.y1);
+    ctx.save();
+    ctx.globalAlpha = 0.14;
+    ctx.fillStyle = theme.accent;
+    ctx.fillRect(a.px, a.py, b.px - a.px, b.py - a.py);
+    ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = theme.accent;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(a.px + 0.5, a.py + 0.5, b.px - a.px - 1, b.py - a.py - 1);
     ctx.restore();
   }
 

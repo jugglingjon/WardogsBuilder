@@ -81,8 +81,9 @@ export function composite(label) {
     label,
     get size() { return done.length; },
     push(command) {
-      command.do();
+      const result = command.do();
       done.push(command);
+      return result;
     },
     do() {
       for (const command of done) command.do();

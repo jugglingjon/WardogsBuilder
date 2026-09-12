@@ -241,9 +241,9 @@ the limit is visible at all times rather than discovered by a rejected click.
 
 | Tool | Key | Behaviour |
 | --- | --- | --- |
-| Select | `V` | Click to select, shift-click to add, drag for marquee |
+| Select | `V` | Click to select, shift-click to add, drag empty ground for a marquee |
 | Place | `B` | Places the palette element; drag to repeat along a line |
-| Move | part of Select | Drag a selection, with live collision feedback |
+| Move | part of Select | Drag a selection, with live collision feedback. Commits on release |
 | Erase | `E` | Click or drag to delete; `Delete` clears a selection |
 
 **Feedback rules**
@@ -307,6 +307,11 @@ of supporting tops at one level, nine tall Hesco blocks or a Bunker roof.
 Making this data-driven rather than a hardcoded FOB check means other required
 or limited elements cost nothing to add later.
 
+**Moving a support** out from under something is allowed, and the piece left
+floating is flagged rather than blocked or deleted. This is the same rule as the
+FOB below, applied consistently: an edit that breaks something reports what it
+broke and leaves the user to decide.
+
 **Moving or deleting the FOB** shifts the region out from under existing pieces.
 The tool never silently deletes work: affected pieces stay put, are flagged as
 out of region in the issues panel, and can be jumped to from there. The user
@@ -330,6 +335,12 @@ Hesco gabions) is a Phase 6 pass, deliberately after the tool works.
 
 The build region draws as a translucent boundary on the ground plane, matching
 the 2D pane.
+
+**Section cut.** The Clip button cuts the view off just above the slice being
+edited, using a real clipping plane rather than hiding whole pieces, because a
+bunker's roof and its floor are one box. The cut faces are left open, which
+reads clearly enough; capping them would need a stencil pass and is not worth it
+yet.
 
 **Camera.** `PerspectiveCamera` with `OrbitControls`, damping on: left-drag
 orbits, scroll zooms, right-drag pans. Plus a **Frame build** button and `Home`
@@ -375,7 +386,7 @@ The client is designed to work fully without it.
 
 Each phase ends with something runnable.
 
-Phases 0 to 3 are complete as of the current branch.
+Phases 0 to 4 are complete as of the current branch.
 
 **Phase 0 — Scaffold.** ✅ Vite project, SCSS pipeline, two-pane responsive layout
 shell, toolbar and palette chrome. No behaviour.
@@ -393,7 +404,7 @@ validity feedback. At this point the tool is usable as a 2D-only planner.
 **Phase 3 — 3D view.** ✅ Scene, box meshes, delta sync, OrbitControls, frame
 build. The first build where the core promise is visible.
 
-**Phase 4 — Full editing.** Selection and marquee, drag to move, rotate, copy
+**Phase 4 — Full editing.** ✅ Selection and marquee, drag to move, rotate, copy
 and paste, slice clipping in 3D, click-to-select in 3D, the issues panel.
 
 **Phase 5 — Persistence and reporting.** Autosave, named saves, import and
