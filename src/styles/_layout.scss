@@ -136,3 +136,21 @@
 
   &[hidden] { display: none; }
 }
+
+.tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 5px 9px;
+  border: 1px solid var(--c-line-strong);
+  border-radius: var(--radius);
+  background: var(--c-surface-raised);
+  color: var(--c-text);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 6;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
+
+  &[hidden] { display: none; }
+}

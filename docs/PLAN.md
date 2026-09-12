@@ -351,16 +351,16 @@ fill plus one directional light for shading and shadows, a ground plane matching
 the grid extent, and a `GridHelper` aligned to the 2D grid so both panes read as
 the same space.
 
-**Meshes.** An element's shape compiles to a list of parts, each a geometry with
-a fixed transform inside the piece: a plain block is one part, a doorway is two
-jambs and a lintel, a hollow cylinder is two walls, a rim and a floor. Pieces of
-a type share one `InstancedMesh` per part, so draw calls track parts per element
-type rather than the size of the build. A thousand Hesco blocks cost one draw
-call; a thousand cylinders cost four.
+**Meshes.** An element's shape is described as a list of parts, each a geometry
+with a fixed offset inside the piece: a plain block is one part, a doorway is
+two jambs and a lintel, a Recon Tower is eighteen boxes. Those parts are then
+baked into a single geometry, so every element type costs one geometry however
+complicated it looks.
 
-Every piece holds the same instance slot in each of its type's meshes, and
-removing one swaps the last slot into the hole instead of rebuilding, which
-makes an erase constant time.
+Pieces of a type share one `InstancedMesh`, so draw calls track the number of
+element types rather than the size of the build. Removing a piece swaps the last
+instance into the hole instead of rebuilding, which makes an erase constant
+time.
 
 Every piece outline is drawn as one merged line set, rebuilt from the model
 rather than patched, and dropped above 2500 pieces where the lines stop reading
@@ -389,6 +389,10 @@ the 2D pane.
 orbits, scroll zooms, right-drag pans. Plus a **Frame build** button and `Home`
 key that fits the camera to the bounding box of all pieces, preset top, front
 and corner views.
+
+**Naming what you point at.** A build is a lot of similar brown boxes, so
+hovering a piece labels it with its name, dimensions and cost. The label names
+the FOB too, even though no tool will pick it.
 
 **Selection.** A selected piece draws as an outline box, which keeps the shared
 materials untouched. Selection is shared with the plan overview, so a piece
@@ -503,8 +507,14 @@ reasoning behind the rules is not lost:
 ## 11a. Still open
 
 **Shape detail.** The shapes are honest but plain: a coil, a pillow, a star, a
-tube, an opening, a tower. Nothing carries the fittings a real Recon Tower or
-Drill Rig would, and both of those are still blocks.
+tube, an opening, a tower, a two-storey blockhouse. Nothing carries the fittings
+a real Drill Rig or Vanguard would, and those are still blocks.
+
+**The blockhouse layout is interpreted.** It was built from a photograph and a
+description rather than a cell-by-cell plan: doorways on two opposite sides of
+the ground floor, a hollow two by two core, and an upper storey with a firing
+slit round all four sides and an entry gap on one. A real occupancy matrix would
+settle the details.
 
 **Seeing inside.** A section cut used to hide everything above a chosen height.
 It was removed as clutter, which leaves no way to look inside a closed

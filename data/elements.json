@@ -202,7 +202,7 @@
       ],
       "cost": 61,
       "color": "#6f5537",
-      "shape": "block",
+      "shape": "blockhouse",
       "surface": "concrete",
       "canSupport": true,
       "groundOnly": false

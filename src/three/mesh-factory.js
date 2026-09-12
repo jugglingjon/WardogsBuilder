@@ -1,17 +1,18 @@
 /**
- * Element type to renderable parts.
+ * Element type to one renderable geometry.
  *
  * An element occupies its full width x depth x height box whatever it looks
  * like, so shape only ever changes geometry. A hollow cylinder still fills the
  * same cells as the block it replaces, and the ghost that previews a placement
  * is still drawn as the box, because the box is what you are spending.
  *
- * Each type yields one material and a list of parts, every part a geometry with
- * a fixed transform inside the piece. sync.js turns each part into its own
- * instanced mesh, so draw calls track parts per element type rather than the
- * size of the build.
+ * A shape is described as a list of parts, each a geometry with a fixed offset
+ * inside the piece, and those parts are then baked into a single geometry. A
+ * Recon Tower is eighteen boxes; merging them means it still costs one draw
+ * call rather than eighteen.
  */
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /** A helix, for the barbed wire coil. */
 class Helix extends THREE.Curve {
@@ -164,6 +165,70 @@ const SHAPES = {
     ];
   },
 
+  /**
+   * A two-storey blockhouse, as in the reference photograph.
+   *
+   * Ground floor: a ring of wall one metre thick around a hollow two by two
+   * core, with a doorway cut through two opposite sides. A deck caps the core,
+   * and the upper storey repeats the ring with a horizontal firing slit running
+   * round all four sides and an entry gap on one of them.
+   *
+   * Proportions scale with the element, so this reads the same whatever size a
+   * blockhouse element declares.
+   */
+  blockhouse(w, h, d) {
+    const wall = Math.min(w, d) * 0.25;      // one metre on a four metre box
+    const storey = h / 2;
+    const deck = h * 0.075;
+
+    const coreW = w - wall * 2;
+    const coreD = d - wall * 2;
+    const lowY = -h / 2 + storey / 2;        // centre of the ground storey
+    const deckY = 0;
+
+    // Upper storey bands, with the slit as the gap between them.
+    const upBase = deck / 2;
+    const upTop = h / 2;
+    const band = (upTop - upBase) * 0.46;
+    const slit = (upTop - upBase) * 0.19;
+    const lowBandY = upBase + band / 2;
+    const highBandY = upBase + band + slit + (upTop - upBase - band - slit) / 2;
+    const highBand = upTop - upBase - band - slit;
+
+    const jamb = coreD * 0.25;               // doorway cheeks on the side walls
+    const lintel = storey * 0.3;
+
+    return [
+      // Ground floor: solid front and back, doorways left and right.
+      part(new THREE.BoxGeometry(w, storey, wall), [0, lowY, -(d - wall) / 2]),
+      part(new THREE.BoxGeometry(w, storey, wall), [0, lowY, (d - wall) / 2]),
+      ...[-1, 1].flatMap((side) => [
+        part(new THREE.BoxGeometry(wall, storey, jamb), [side * (w - wall) / 2, lowY, -(coreD - jamb) / 2]),
+        part(new THREE.BoxGeometry(wall, storey, jamb), [side * (w - wall) / 2, lowY, (coreD - jamb) / 2]),
+        part(new THREE.BoxGeometry(wall, lintel, coreD - jamb * 2),
+          [side * (w - wall) / 2, lowY + storey / 2 - lintel / 2, 0])
+      ]),
+
+      // The deck between the storeys, capping the hollow core.
+      part(new THREE.BoxGeometry(w, deck, d), [0, deckY, 0]),
+
+      // Upper storey: a band below the slit and a band above it, all round.
+      part(new THREE.BoxGeometry(w, band, wall), [0, lowBandY, -(d - wall) / 2]),
+      part(new THREE.BoxGeometry(w, highBand, wall), [0, highBandY, -(d - wall) / 2]),
+      part(new THREE.BoxGeometry(wall, band, coreD), [-(w - wall) / 2, lowBandY, 0]),
+      part(new THREE.BoxGeometry(wall, highBand, coreD), [-(w - wall) / 2, highBandY, 0]),
+      part(new THREE.BoxGeometry(wall, band, coreD), [(w - wall) / 2, lowBandY, 0]),
+      part(new THREE.BoxGeometry(wall, highBand, coreD), [(w - wall) / 2, highBandY, 0]),
+
+      // The entry side keeps its lintel but opens up beneath it.
+      ...[-1, 1].map((side) => part(
+        new THREE.BoxGeometry((w - coreW) / 2, band, wall),
+        [side * (w - (w - coreW) / 2) / 2, lowBandY, (d - wall) / 2]
+      )),
+      part(new THREE.BoxGeometry(w, highBand, wall), [0, highBandY, (d - wall) / 2])
+    ];
+  },
+
   /** A coil running along the piece's longer horizontal axis. */
   spiral(w, h, d) {
     const axis = d >= w ? 'z' : 'x';
@@ -191,9 +256,17 @@ export class MeshFactory {
     const parts = shape(w, h, d); // world axes: x width, y height, z depth
     const metal = element.surface === 'metal';
 
+    // Bake each part's offset in and merge. Cloning first, because a shape may
+    // reuse one geometry for several parts, as the tower does for its uprights.
+    const baked = parts.map(({ geometry, position }) => geometry.clone().translate(...position));
+    const geometry = baked.length === 1 ? baked[0] : mergeGeometries(baked);
+    if (!geometry) throw new Error(`Could not build the geometry for ${elementId}`);
+    if (baked.length > 1) for (const piece of baked) piece.dispose();
+    for (const source of new Set(parts.map((part) => part.geometry))) source.dispose();
+
     const record = {
       element,
-      parts,
+      geometry,
       material: new THREE.MeshStandardMaterial({
         color: new THREE.Color(element.color),
         map: canvasTexture(element.color, element.surface ?? 'concrete'),
@@ -209,7 +282,7 @@ export class MeshFactory {
 
   dispose() {
     for (const record of this.#types.values()) {
-      for (const p of record.parts) p.geometry.dispose();
+      record.geometry.dispose();
       record.material.map?.dispose();
       record.material.dispose();
     }

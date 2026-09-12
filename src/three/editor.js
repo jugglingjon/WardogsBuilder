@@ -13,6 +13,7 @@ import { ROTATIONS, rotatedSize, boundsOf } from '../model/geometry.js';
 import { boundsOfPieces } from '../model/query.js';
 import { addPiece, deletePieces, movePieces, rotatePiece, composite } from '../model/commands.js';
 import { Marquee } from './marquee.js';
+import { Tooltip, describe } from '../ui/tooltip.js';
 import { piecesInScreenRect } from './screen-select.js';
 
 export const TOOLS = { SELECT: 'select', PLACE: 'place', ERASE: 'erase' };
@@ -50,6 +51,7 @@ export class SceneEditor {
     view.scene.add(this.movePreview);
 
     this.marquee = new Marquee(canvas.parentElement);
+    this.tooltip = new Tooltip(canvas.parentElement);
 
     this.#bindPointer();
     this.#bindKeyboard();
@@ -155,9 +157,11 @@ export class SceneEditor {
       if (this.#marquee) {
         const at = this.#canvasPoint(event);
         this.marquee.update(at.x, at.y);
+        this.tooltip.hide();
         return;
       }
       if (this.#move) return this.#updateMove(event);
+      this.#updateTooltip(event);
       const proposal = this.tool === TOOLS.PLACE
         ? this.placement.update(event, this.#paint ? this.#paintedIds : null)
         : null;
@@ -169,6 +173,7 @@ export class SceneEditor {
     });
 
     canvas.addEventListener('pointerleave', () => {
+      this.tooltip.hide();
       if (this.#paint || this.#move) return;
       this.placement.clear();
       this.#status();
@@ -274,7 +279,7 @@ export class SceneEditor {
 
   // --- selection and moving -------------------------------------------------
 
-  #pieceAt(event) {
+  #pieceAt(event, { includeFixed = false } = {}) {
     const rect = this.canvas.getBoundingClientRect();
     const pointer = new THREE.Vector2(
       ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -287,7 +292,8 @@ export class SceneEditor {
       const id = this.sync.pieceIdFromHit(hit);
       // The FOB is part of the site, not part of the build. Clicking it behaves
       // like clicking the ground, so no tool ever offers to move or erase it.
-      if (id && !this.model.isFixed(this.model.piece(id))) return id;
+      // The tooltip still names it, which is why it can ask for fixtures.
+      if (id && (includeFixed || !this.model.isFixed(this.model.piece(id)))) return id;
     }
     return null;
   }
@@ -317,6 +323,16 @@ export class SceneEditor {
       delta: { dx: 0, dy: 0 },
       valid: true
     };
+  }
+
+  /** Name whatever the cursor is over, and nothing when it is over ground. */
+  #updateTooltip(event) {
+    const id = this.#pieceAt(event, { includeFixed: true });
+    if (!id) return this.tooltip.hide();
+    const piece = this.model.piece(id);
+    if (!piece) return this.tooltip.hide();
+    const at = this.#canvasPoint(event);
+    this.tooltip.show(describe(this.model.elementOf(piece)), at.x, at.y);
   }
 
   #canvasPoint(event) {

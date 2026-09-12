@@ -1,14 +1,13 @@
 /**
  * Model to scene, as deltas.
  *
- * Pieces of the same element type share one InstancedMesh per part of their
- * shape, so draw calls track parts per element type rather than the size of the
- * build. A thousand Hesco blocks cost one draw call; a thousand hollow
- * cylinders cost four, one for each piece of the tube.
+ * Pieces of the same element type share one InstancedMesh, so draw calls track
+ * the number of element types rather than the size of the build. A thousand
+ * Hesco blocks cost one draw call, and so do a thousand Recon Towers, whose
+ * eighteen boxes were merged into a single geometry by the mesh factory.
  *
- * Every piece holds the same instance slot in each of its type's meshes.
- * Removing one swaps the last slot into the hole rather than rebuilding, so an
- * erase is constant time.
+ * Removing a piece swaps the last instance into the hole rather than
+ * rebuilding, so an erase is constant time.
  */
 import * as THREE from 'three';
 import { boundsOf, pieceCenterWorld } from '../model/geometry.js';
@@ -61,11 +60,8 @@ export class SceneSync {
 
   #typeRecord(elementId) {
     if (this.#types.has(elementId)) return this.#types.get(elementId);
-    const { material, parts } = this.factory.typeOf(elementId);
-
-    // Each part's transform inside the piece, baked once.
-    const locals = parts.map((p) => new THREE.Matrix4().makeTranslation(...p.position));
-    const record = { material, parts, locals, ids: [], capacity: 0, meshes: [] };
+    const { geometry, material } = this.factory.typeOf(elementId);
+    const record = { geometry, material, ids: [], capacity: 0, mesh: null };
     this.#types.set(elementId, record);
     this.#grow(record, START_CAPACITY);
     return record;
@@ -73,26 +69,23 @@ export class SceneSync {
 
   /** Capacity doubles rather than reallocating per piece. */
   #grow(record, slots) {
-    const previous = record.meshes;
-    record.meshes = record.parts.map((part, i) => {
-      const mesh = new THREE.InstancedMesh(part.geometry, record.material, slots);
-      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.frustumCulled = false;
-      mesh.count = record.ids.length;
+    const previous = record.mesh;
+    const mesh = new THREE.InstancedMesh(record.geometry, record.material, slots);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.frustumCulled = false;
+    mesh.count = record.ids.length;
 
-      const old = previous[i];
-      if (old) {
-        mesh.instanceMatrix.array.set(old.instanceMatrix.array.subarray(0, mesh.count * 16));
-        old.removeFromParent();
-        old.dispose();
-      }
-      mesh.instanceMatrix.needsUpdate = true;
-      invalidateBounds(mesh);
-      this.view.pieces.add(mesh);
-      return mesh;
-    });
+    if (previous) {
+      mesh.instanceMatrix.array.set(previous.instanceMatrix.array.subarray(0, mesh.count * 16));
+      previous.removeFromParent();
+      previous.dispose();
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    invalidateBounds(mesh);
+    this.view.pieces.add(mesh);
+    record.mesh = mesh;
     record.capacity = slots;
   }
 
@@ -101,10 +94,8 @@ export class SceneSync {
     if (record.ids.length >= record.capacity) this.#grow(record, record.capacity * 2);
     const block = record.ids.length;
     record.ids.push(piece.id);
-    for (const mesh of record.meshes) {
-      mesh.count = record.ids.length;
-      invalidateBounds(mesh);
-    }
+    record.mesh.count = record.ids.length;
+    invalidateBounds(record.mesh);
     this.#blocks.set(piece.id, { type: piece.type, block });
     this.#write(piece);
   }
@@ -124,11 +115,9 @@ export class SceneSync {
       if (moved) this.#write(moved, record, slot.block);
     }
     record.ids.pop();
-    for (const mesh of record.meshes) {
-      mesh.count = record.ids.length;
-      mesh.instanceMatrix.needsUpdate = true;
-      invalidateBounds(mesh);
-    }
+    record.mesh.count = record.ids.length;
+    record.mesh.instanceMatrix.needsUpdate = true;
+    invalidateBounds(record.mesh);
     this.#blocks.delete(id);
     this.view.invalidate();
   }
@@ -141,7 +130,7 @@ export class SceneSync {
 
     const element = this.model.elementOf(piece);
     const centre = pieceCenterWorld(piece, element);
-    const pieceMatrix = new THREE.Matrix4().compose(
+    const matrix = new THREE.Matrix4().compose(
       new THREE.Vector3(centre.x, centre.y, centre.z),
       new THREE.Quaternion().setFromAxisAngle(
         new THREE.Vector3(0, 1, 0), -THREE.MathUtils.degToRad(piece.rot)
@@ -149,13 +138,9 @@ export class SceneSync {
       new THREE.Vector3(1, 1, 1)
     );
 
-    const matrix = new THREE.Matrix4();
-    target.meshes.forEach((mesh, i) => {
-      matrix.multiplyMatrices(pieceMatrix, target.locals[i]);
-      mesh.setMatrixAt(at, matrix);
-      mesh.instanceMatrix.needsUpdate = true;
-      invalidateBounds(mesh);
-    });
+    target.mesh.setMatrixAt(at, matrix);
+    target.mesh.instanceMatrix.needsUpdate = true;
+    invalidateBounds(target.mesh);
     this.view.invalidate();
   }
 
@@ -165,7 +150,7 @@ export class SceneSync {
   pieceIdFromHit(hit) {
     if (!hit || hit.object === this.edges) return null;
     for (const record of this.#types.values()) {
-      if (!record.meshes.includes(hit.object)) continue;
+      if (record.mesh !== hit.object) continue;
       return record.ids[hit.instanceId] ?? null;
     }
     return hit.object.userData.pieceId ?? null;
@@ -266,11 +251,9 @@ export class SceneSync {
   rebuild() {
     for (const record of this.#types.values()) {
       record.ids.length = 0;
-      for (const mesh of record.meshes) {
-        mesh.count = 0;
-        mesh.instanceMatrix.needsUpdate = true;
-        invalidateBounds(mesh);
-      }
+      record.mesh.count = 0;
+      record.mesh.instanceMatrix.needsUpdate = true;
+      invalidateBounds(record.mesh);
     }
     this.#blocks.clear();
     for (const piece of this.model.pieces()) this.#add(piece);
