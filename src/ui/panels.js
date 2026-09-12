@@ -71,7 +71,6 @@ export class StatsPanel {
     this.model = model;
     this.refresh = coalesce(() => this.render());
     model.on('change', this.refresh);
-    model.on('slice:change', this.refresh);
     this.render();
   }
 

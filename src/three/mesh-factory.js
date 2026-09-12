@@ -119,8 +119,35 @@ const SHAPES = {
     ];
   },
 
-  /** A filled pillow, for stacked sandbags. */
-  mound: (w, h, d) => [part(new THREE.SphereGeometry(0.5, 18, 12).scale(w, h, d))],
+  /**
+   * A filled pillow, for stacked sandbags. It sits lower than the box it
+   * occupies, because a sandbag wall slumps rather than filling its space to
+   * the brim. The cells it takes are unchanged.
+   */
+  mound(w, h, d) {
+    const rise = h * 0.72;
+    return [part(
+      new THREE.SphereGeometry(0.5, 18, 12).scale(w, rise, d),
+      [0, -(h - rise) / 2, 0]
+    )];
+  },
+
+  /** A shaft with a platform halfway up and a pointed roof on top. */
+  tower(w, h, d) {
+    const roof = h * 0.12;
+    const deck = h * 0.05;
+    const shaft = Math.min(w, d) * 0.5;
+    const shaftHeight = h - roof;
+    return [
+      part(new THREE.BoxGeometry(shaft, shaftHeight, shaft), [0, -h / 2 + shaftHeight / 2, 0]),
+      part(new THREE.BoxGeometry(w, deck, d)), // halfway up, the full footprint
+      part(
+        // Four sides turned to square up with the shaft below it.
+        new THREE.ConeGeometry(Math.min(w, d) * 0.45, roof, 4).rotateY(Math.PI / 4),
+        [0, h / 2 - roof / 2, 0]
+      )
+    ];
+  },
 
   /** Three crossing beams: six points, like a real anti-tank hedgehog. */
   hedgehog(w, h, d) {

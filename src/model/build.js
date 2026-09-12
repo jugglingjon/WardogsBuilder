@@ -49,7 +49,6 @@ export class BuildModel extends Emitter {
     this.name = name;
     this.occupancy = new Occupancy();
     this.selection = new Set();
-    this.slice = 0;
     this.revision = 0;
     this._pieces = new Map();
     this._list = null;
@@ -173,13 +172,6 @@ export class BuildModel extends Emitter {
     if (this.selection.size === 0) return;
     this.selection.clear();
     this.emit('selection:change', []);
-  }
-
-  setSlice(z) {
-    const clamped = Math.max(0, Math.min(this.grid.height - 1, Math.round(z)));
-    if (clamped === this.slice) return;
-    this.slice = clamped;
-    this.emit('slice:change', clamped);
   }
 
   setName(name) {

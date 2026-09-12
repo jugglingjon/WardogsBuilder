@@ -131,11 +131,8 @@ export function dropZ(model, piece, ceiling = model.grid.height) {
  * Where a piece the cursor is over should land: on top of whatever is already
  * in that column, or on the ground if it is clear.
  *
- * This is deliberately independent of the slice being edited. Standing on the
- * ground slice and hovering over a two metre stack should place on top of the
- * stack, not inside it, and since floating is illegal there is nowhere else a
- * piece could go. The slice decides what is drawn solid, not where pieces land.
- * Holding Alt overrides this and pins the piece to the slice exactly.
+ * Hovering over a two metre stack places on top of the stack, not inside it,
+ * and since floating is illegal there is nowhere else a piece could go.
  */
 export function restingZ(model, piece) {
   return dropZ(model, piece);

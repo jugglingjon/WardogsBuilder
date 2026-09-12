@@ -18,7 +18,6 @@ import { Camera2D } from './editor/camera2d.js';
 import { PlanRenderer } from './editor/plan-renderer.js';
 import { OverviewController } from './editor/overview.js';
 import { Toolbar } from './ui/toolbar.js';
-import { CutControl } from './ui/cut-control.js';
 import { Palette } from './ui/palette.js';
 import { IssuesPanel, TallyPanel, StatsPanel } from './ui/panels.js';
 import { bindShortcuts } from './ui/shortcuts.js';
@@ -64,7 +63,6 @@ document.querySelector('#app').innerHTML = `
         <div class="pane__header">
           <span class="label">Build</span>
           <span class="status" id="view-status"></span>
-          <div class="toolbar__group" id="cut-control"></div>
           <div class="toolbar__group">
             <button class="btn" data-view="top">Top</button>
             <button class="btn" data-view="front">Front</button>
@@ -113,8 +111,6 @@ document.querySelector('#frame-view').addEventListener('click', frameBuild);
 for (const button of document.querySelectorAll('[data-view]')) {
   button.addEventListener('click', () => view.view(button.dataset.view));
 }
-new CutControl(document.querySelector('#cut-control'), { model, view });
-
 new ResizeObserver(([entry]) => {
   view.resize(entry.contentRect.width, entry.contentRect.height);
 }).observe(document.querySelector('#view-body'));

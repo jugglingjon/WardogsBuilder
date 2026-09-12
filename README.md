@@ -72,7 +72,6 @@ status bar.
 | Pan | Middle-drag |
 | Zoom | Scroll |
 | Frame the build | The Frame button, or the Top, Front and Corner presets |
-| Section cut | Clip, then move the height with the stepper or `PageUp` and `PageDown` |
 | Every shortcut | `?` |
 
 On a touch screen one finger orbits, two fingers pinch and pan, and a tap uses

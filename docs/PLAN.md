@@ -206,7 +206,7 @@ command object, so undo and redo are uniform.
 │   │   ├── history.js         # undo/redo stack
 │   │   └── serialize.js       # save/load/export, schema versioning
 │   ├── three/
-│   │   ├── scene.js           # renderer, lights, ground, camera, section cut
+│   │   ├── scene.js           # renderer, lights, ground, camera
 │   │   ├── mesh-factory.js    # element -> geometry, cached per type
 │   │   ├── sync.js            # model events -> scene graph deltas
 │   │   ├── placement.js       # where a piece would land, and its ghost
@@ -385,17 +385,10 @@ excluded from raycasting entirely.
 The build region draws as a translucent boundary on the ground plane, matching
 the 2D pane.
 
-**Section cut.** The Clip button cuts the view off just above the slice being
-edited, using a real clipping plane rather than hiding whole pieces, because a
-bunker's roof and its floor are one box. The cut faces are left open, which
-reads clearly enough; capping them would need a stencil pass and is not worth it
-yet.
-
 **Camera.** `PerspectiveCamera` with `OrbitControls`, damping on: left-drag
 orbits, scroll zooms, right-drag pans. Plus a **Frame build** button and `Home`
 key that fits the camera to the bounding box of all pieces, preset top, front
-and corner views, and a **slice clip** toggle that hides everything above the
-current 2D slice so you can see inside a bunker while working on it.
+and corner views.
 
 **Selection.** A selected piece draws as an outline box, which keeps the shared
 materials untouched. Selection is shared with the plan overview, so a piece
@@ -463,10 +456,10 @@ tools and the placement modifier were deleted.
 build. The first build where the core promise is visible.
 
 **Phase 4 — Full editing.** ✅ Selection and marquee, drag to move, rotate, copy
-and paste, slice clipping in 3D, click-to-select in 3D, the issues panel.
+and paste, click-to-select in 3D, the issues panel.
 
 **Phase 4a — Editing moved into 3D.** ✅ Placement, targeting, the ghost, moving
-and the section cut all moved to the 3D view, and the plan pane became a
+and moving all went to the 3D view, and the plan pane became a
 toggleable overview. The model core did not change: the landing rule was already
 `dropZ` and the red ghost was already the support validation.
 
@@ -509,12 +502,13 @@ reasoning behind the rules is not lost:
 
 ## 11a. Still open
 
-**Capped cut faces.** The section cut leaves the cut surfaces open rather than
-capped. It reads clearly enough as a section; capping needs a stencil pass.
-
 **Shape detail.** The shapes are honest but plain: a coil, a pillow, a star, a
-tube, an opening. Nothing carries the fittings a real Recon Tower or Drill Rig
-would, and every one of those is still a block.
+tube, an opening, a tower. Nothing carries the fittings a real Recon Tower or
+Drill Rig would, and both of those are still blocks.
+
+**Seeing inside.** A section cut used to hide everything above a chosen height.
+It was removed as clutter, which leaves no way to look inside a closed
+structure. Orbiting to a doorway is the only option now.
 
 ## 12. Risks
 

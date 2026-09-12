@@ -24,8 +24,7 @@ const GROUPS = [
     keys: [
       ['Right-drag', 'Orbit'],
       ['Middle-drag', 'Pan'],
-      ['Scroll', 'Zoom at the cursor'],
-      ['PageUp / PageDown', 'Raise or lower the section cut']
+      ['Scroll', 'Zoom at the cursor']
     ]
   },
   {

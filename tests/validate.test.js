@@ -231,7 +231,7 @@ describe('material tally', () => {
 });
 
 describe('where a placed piece lands', () => {
-  it('rests on top of a two metre stack from any slice', () => {
+  it('rests on top of a two metre stack', () => {
     const { model } = modelWithFob();
     model.addPiece({ type: 'hesco_block_large', x: 30, y: 30, z: 0 });
     const ghost = { type: 'hesco_block_small', x: 30, y: 30, rot: 0 };
@@ -247,9 +247,8 @@ describe('where a placed piece lands', () => {
     expect(place(model, { ...ghost, z: restingZ(model, ghost) }).ok).toBe(true);
   });
 
-  it('falls to the ground over clear columns, never floating at the slice', () => {
+  it('falls to the ground over clear columns rather than floating', () => {
     const { model } = modelWithFob();
-    model.setSlice(7);
     expect(restingZ(model, { type: 'hesco_block_small', x: 30, y: 30, rot: 0 })).toBe(0);
   });
 

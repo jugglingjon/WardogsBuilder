@@ -89,7 +89,7 @@
         1
       ],
       "cost": 10,
-      "color": "#9a7a4f",
+      "color": "#c0a074",
       "shape": "mound",
       "surface": "gabion",
       "canSupport": false,
@@ -234,7 +234,7 @@
       ],
       "cost": 61,
       "color": "#b0b5bb",
-      "shape": "block",
+      "shape": "tower",
       "surface": "concrete",
       "canSupport": false,
       "groundOnly": false

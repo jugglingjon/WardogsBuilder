@@ -67,27 +67,3 @@
     color: var(--c-accent-ink);
   }
 }
-
-.slice {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 10px;
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
-  background: var(--c-surface);
-  height: 30px;
-}
-
-.slice__value { font-size: 13px; min-width: 62px; text-align: center; }
-.slice__value b { color: var(--c-accent); }
-
-.slice__step {
-  color: var(--c-text-muted);
-  padding: 0 4px;
-  font-size: 15px;
-  line-height: 1;
-
-  &:hover:not(:disabled) { color: var(--c-text); }
-  &:disabled { opacity: 0.3; cursor: default; }
-}

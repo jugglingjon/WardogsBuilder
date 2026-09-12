@@ -27,11 +27,6 @@ export class SceneView {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // A horizontal plane that keeps everything at or below the slice being
-    // edited. Off by default; the Clip button turns it on.
-    this.clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), Infinity);
-    this.clipping = false;
-
     this.scene = new THREE.Scene();
     this.scene.background = themeColor('--c-bg', '#0e1013');
 
@@ -61,7 +56,6 @@ export class SceneView {
 
     model.on('change', () => this.#syncGround());
     model.on('reset', () => this.#syncGround());
-    model.on('slice:change', () => this.#syncClip());
 
     this.#loop();
   }
@@ -128,25 +122,6 @@ export class SceneView {
       area.x0 === this.#area.x0 && area.y0 === this.#area.y0 &&
       area.x1 === this.#area.x1 && area.y1 === this.#area.y1;
     if (!same) this.#buildGround();
-  }
-
-  /**
-   * Cut the view off above the slice being edited, so you can look inside a
-   * bunker instead of at its roof. A real clipping plane rather than hiding
-   * whole pieces, because a bunker's roof and its floor are one box.
-   */
-  setClip(enabled) {
-    this.clipping = enabled;
-    this.renderer.clippingPlanes = enabled ? [this.clipPlane] : [];
-    this.#syncClip();
-    return this.clipping;
-  }
-
-  #syncClip() {
-    // A hair above the slice, so a box whose top face sits exactly on the cut
-    // keeps its lid instead of speckling against a coplanar plane.
-    this.clipPlane.constant = this.clipping ? this.model.slice + 1.002 : Infinity;
-    this.invalidate();
   }
 
   resize(width, height) {
