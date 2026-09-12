@@ -285,7 +285,9 @@ export class SceneEditor {
     for (const hit of raycaster.intersectObjects(this.view.pieces.children, true)) {
       if (hit.object === this.sync.edges) continue;
       const id = this.sync.pieceIdFromHit(hit);
-      if (id) return id;
+      // The FOB is part of the site, not part of the build. Clicking it behaves
+      // like clicking the ground, so no tool ever offers to move or erase it.
+      if (id && !this.model.isFixed(this.model.piece(id))) return id;
     }
     return null;
   }

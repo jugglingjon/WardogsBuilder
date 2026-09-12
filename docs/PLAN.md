@@ -58,14 +58,14 @@ known elements. Adding a part is an edit to that file, not a code change.
 
 | Element | Size (w × d × h) | Cost | Can support | Notes |
 | --- | --- | --- | --- | --- |
-| FOB | 3 × 3 × 1 | 250\* | no | Exactly one per construction; defines the build region |
+| FOB | 3 × 3 × 1 | 0 | no | Fixed at the centre, free, and defines the site |
 | Hesco Block | 1 × 1 × 1 | 10 | yes | |
 | Tall Hesco Block | 1 × 1 × 2 | 20 | yes | |
 | Long Hesco Wall | 4 × 1 × 2 | 80 | yes | Four tall Hesco blocks in a row |
 | Bunker | 4 × 4 × 4 | 500\* | yes | |
 | Air Defense | 3 × 3 × 1 | 300\* | no | 360°, no firing arc |
 
-Cost is building material. Values marked \* are placeholders and will change;
+Cost is building material; the FOB is free. Values marked \* are placeholders and will change;
 the catalog flags them with `costPlaceholder` so the tally can mark them rather
 than presenting a guess as fact. The Hesco costs are internally consistent by
 construction: a tall block is two blocks, a long wall is four tall blocks.
@@ -86,23 +86,32 @@ its place twice: the renderers draw the seams between the four blocks instead of
 one undifferentiated slab, and the parts tally can report a Long Hesco Wall as
 either one piece or four blocks depending on how the game counts them.
 
-Three further fields drive validation and reporting, all of them data rather
-than code: `canSupport` marks the elements that others may stack on, `cost`
-gives the building material price, and `required` with `maxCount: 1` pins the
-FOB to exactly one per construction.
+Four further fields drive validation and reporting, all of them data rather than
+code: `canSupport` marks the elements that others may stack on, `cost` gives the
+building material price, `fixed` marks an element the site places and the user
+cannot touch, and `required` with `maxCount: 1` pins the FOB to exactly one per
+construction.
 
-### The build region
+### The site and its fixtures
 
-The FOB does not merely have to exist, it defines where building is allowed.
-The buildable region is the FOB's 3 × 3 footprint expanded by 50 m in every
-horizontal direction, giving a 103 × 103 m square centred on the FOB. Every
-cell of every piece must fall inside it.
+The FOB is not something you place. Every construction has exactly one, fixed at
+the centre of the site, free of charge, and it cannot be moved, rotated or
+removed. It is scenery: no tool picks it, the palette does not offer it, and a
+marquee never catches it.
 
-This sets the default grid: rather than an arbitrary plot, the grid is the build
-region itself, so the editable area and the legal area are the same thing and
-there is no dead space to scroll through. Before a FOB is placed there is no
-region, so the grid shows a neutral 103 × 103 area and the first FOB placement
-fixes it.
+That makes the site and the buildable region the same rectangle by construction.
+The region is the FOB's 3 × 3 footprint expanded by 50 m in every horizontal
+direction, so the ground is 103 × 103 m and the FOB sits at (50, 50). There is
+no reason for a plane larger than the area you may build on, and no reason to
+put the FOB anywhere but the middle of it.
+
+Two things fall out of that. Validation no longer scans the build to find where
+the region is, since it is always the grid. And the whole class of problems
+around moving the FOB out from under existing work simply cannot happen.
+
+Fixtures are catalog data: an element flagged `fixed` is placed at the centre of
+the site when a build starts, and normalised back there when an older save or a
+shared link is loaded, whether it was somewhere else, duplicated, or missing.
 
 ### The build document
 
@@ -307,8 +316,7 @@ Two levels, both surfaced in a small issues panel rather than by blocking edits.
 **Placement rules**, checked live during placement and move:
 
 - Cells must be unoccupied.
-- Cells must be inside the build region, the 103 × 103 m square centred on the
-  FOB. The FOB itself is exempt, since it creates the region.
+- Cells must be inside the build region, which is the whole 103 × 103 m site.
 - Cells must be at or below the 16 m build ceiling.
 - **Support.** Every cell of a piece's base must rest on either the ground or
   the top face of a supporting element, with no exceptions and no overhang. A
@@ -325,24 +333,15 @@ of supporting tops at one level, nine tall Hesco blocks or a Bunker roof.
 **Build rules**, recomputed on change:
 
 - Exactly one FOB, driven by `required: true` and `maxCount: 1` in the catalog.
-  A build without one shows a persistent warning, since the game will not accept
-  the construction. Attempting to place a second offers to move the existing one
-  instead, which is what the user meant anyway.
+  The site guarantees this, so the warning can no longer fire; it is kept as a
+  net in case a load ever produces a build without one.
 
 Making this data-driven rather than a hardcoded FOB check means other required
 or limited elements cost nothing to add later.
 
 **Moving a support** out from under something is allowed, and the piece left
-floating is flagged rather than blocked or deleted. This is the same rule as the
-FOB below, applied consistently: an edit that breaks something reports what it
-broke and leaves the user to decide.
-
-**Moving or deleting the FOB** shifts the region out from under existing pieces.
-The tool never silently deletes work: affected pieces stay put, are flagged as
-out of region in the issues panel, and can be jumped to from there. The user
-decides whether to move them or move the FOB back.
-
----
+floating is flagged rather than blocked or deleted. An edit that breaks
+something reports what it broke and leaves the user to decide.
 
 ## 7. The 3D pane
 

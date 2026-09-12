@@ -59,11 +59,11 @@ export function normalizeScreenRect(from, to) {
   };
 }
 
-/** Every piece the rectangle touches. */
+/** Every piece the rectangle touches. Fixtures are scenery and never caught. */
 export function piecesInScreenRect(model, camera, viewport, rect) {
   camera.updateMatrixWorld();
   const ids = [];
-  for (const piece of model.pieces()) {
+  for (const piece of model.placed()) {
     const bounds = screenBoundsOfPiece(piece, model.elementOf(piece), camera, viewport);
     if (bounds && rectsOverlap(bounds, rect)) ids.push(piece.id);
   }

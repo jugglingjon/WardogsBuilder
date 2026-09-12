@@ -9,10 +9,9 @@
 export function seedSampleBuild(model) {
   model.setName('Sample outpost');
 
+  // The FOB is already there: the site places it at the centre.
   const cx = Math.floor(model.grid.width / 2);
   const cy = Math.floor(model.grid.depth / 2);
-
-  model.addPiece({ type: 'fob', x: cx - 1, y: cy - 1, z: 0 });
 
   // A wall run along the north and south approaches.
   for (let i = 0; i < 3; i++) {

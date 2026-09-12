@@ -17,13 +17,28 @@ export const SCHEMA_VERSION = 1;
 let idCounter = 0;
 const nextId = () => `p${++idCounter}`;
 
-/** The grid defaults to the buildable region, so there is no dead space. */
+/**
+ * The site is exactly the buildable region and nothing more: the FOB sits at
+ * the centre and the ground reaches 50 m from it in every direction. There is
+ * no reason for a plane larger than the area you may build on.
+ */
 export function defaultGrid(catalog = defaultCatalog) {
   const defining = catalog.regionDefiningElement();
   const { width, depth } = defining
     ? regionExtent(defining)
     : { width: 64, depth: 64 };
   return { width, depth, height: 16 };
+}
+
+/** Where a fixture sits: centred on the site, on the ground. */
+export function fixtureSpec(element, grid) {
+  return {
+    type: element.id,
+    x: Math.floor((grid.width - element.size[0]) / 2),
+    y: Math.floor((grid.depth - element.size[1]) / 2),
+    z: 0,
+    rot: 0
+  };
 }
 
 export class BuildModel extends Emitter {
@@ -38,6 +53,48 @@ export class BuildModel extends Emitter {
     this.revision = 0;
     this._pieces = new Map();
     this._list = null;
+    this.#ensureFixtures();
+  }
+
+  /**
+   * Put the site's fixtures where they belong, adding what is missing and
+   * moving anything an older save or a shared link left elsewhere. Called on
+   * construction and after every load, so a build always has exactly one FOB
+   * and it is always in the middle.
+   */
+  #ensureFixtures() {
+    for (const element of this.catalog.fixtures()) {
+      const spec = fixtureSpec(element, this.grid);
+      const existing = this.pieces().filter((p) => p.type === element.id);
+
+      for (const extra of existing.slice(1)) this.#force(() => this.removePiece(extra.id));
+      const piece = existing[0];
+
+      if (!piece) {
+        this.#force(() => this.addPiece(spec));
+      } else if (piece.x !== spec.x || piece.y !== spec.y || piece.z !== spec.z || piece.rot !== 0) {
+        this.#force(() => this.updatePiece(piece.id, spec));
+      }
+    }
+  }
+
+  /** Fixtures are immutable to everyone except the code that positions them. */
+  #force(change) {
+    this._placing = true;
+    try { change(); } finally { this._placing = false; }
+  }
+
+  isFixed(piece) {
+    return Boolean(piece && this.catalog.get(piece.type).fixed);
+  }
+
+  /** Pieces the user actually placed, which is what the UI counts and prices. */
+  placed() {
+    return this.pieces().filter((piece) => !this.isFixed(piece));
+  }
+
+  get placedCount() {
+    return this.placed().length;
   }
 
   /**
@@ -79,6 +136,7 @@ export class BuildModel extends Emitter {
   removePiece(id) {
     const piece = this._pieces.get(id);
     if (!piece) return null;
+    if (this.isFixed(piece) && !this._placing) return null;
     this.occupancy.remove(piece, this.elementOf(piece));
     this._pieces.delete(id);
     this.selection.delete(id);
@@ -92,6 +150,7 @@ export class BuildModel extends Emitter {
   updatePiece(id, patch) {
     const piece = this._pieces.get(id);
     if (!piece) return null;
+    if (this.isFixed(piece) && !this._placing) return null;
     const element = this.elementOf(piece);
     this.occupancy.remove(piece, element);
     Object.assign(piece, patch);
@@ -145,6 +204,7 @@ export class BuildModel extends Emitter {
       if (Number.isFinite(n)) idCounter = Math.max(idCounter, n);
     }
     this.#touch();
+    this.#ensureFixtures();
     this.emit('reset', this);
     this.emit('change', { reason: 'reset' });
   }

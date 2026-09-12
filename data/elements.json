@@ -32,17 +32,18 @@
         1
       ],
       "color": "#4f5b3c",
-      "cost": 250,
-      "costPlaceholder": true,
+      "cost": 0,
+      "costPlaceholder": false,
       "canSupport": false,
       "facing": "none",
+      "fixed": true,
       "required": true,
       "maxCount": 1,
       "buildRegion": {
         "shape": "square",
         "marginFromFootprint": 50
       },
-      "notes": "Forward operating base. At least one is required in every construction, and it defines the buildable region: its footprint expanded by 50m in every horizontal direction."
+      "notes": "Forward operating base. Every construction has exactly one, placed at the centre of the site and free of charge. It cannot be placed, moved or removed, and it defines the buildable region: its footprint expanded by 50m in every horizontal direction."
     },
     {
       "id": "hesco_block",

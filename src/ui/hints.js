@@ -43,11 +43,11 @@ export class Hints {
   }
 
   #current() {
-    if (this.model.count === 0) {
+    if (this.model.placedCount === 0) {
       return {
-        id: 'fob',
-        title: 'Place a FOB to begin',
-        detail: 'It defines the 103 × 103 m area you can build in.'
+        id: 'start',
+        title: 'Pick an element and click to build',
+        detail: 'The FOB sits at the centre and the ground reaches 50 m from it.'
       };
     }
     if (!this.#dismissed.has('camera')) {

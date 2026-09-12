@@ -1,59 +1,72 @@
 import { describe, it, expect } from 'vitest';
 import { canPlace, dropZ, restingZ, buildRegion, validateBuild, tally, REASON } from '../src/model/validate.js';
-import { modelWithFob, emptyModel, pad } from './helpers.js';
+import { siteModel, modelWithFob, emptyModel, pad } from './helpers.js';
+import { catalog } from '../src/model/catalog.js';
 
 const place = (model, spec, opts) => canPlace(model, { id: 'ghost', rot: 0, ...spec }, opts);
 
-describe('the build region', () => {
-  it('extends 50m from the FOB footprint in every direction', () => {
-    const { model } = modelWithFob();
-    expect(buildRegion(model)).toMatchObject({ x0: 0, x1: 103, y0: 0, y1: 103 });
+describe('the site', () => {
+  it('is exactly the buildable region, 50m out from the FOB', () => {
+    const { model } = siteModel();
+    expect(model.grid).toMatchObject({ width: 103, depth: 103 });
+    expect(buildRegion(model)).toMatchObject({ x0: 0, y0: 0, x1: 103, y1: 103 });
   });
 
-  it('does not exist until a FOB is placed', () => {
-    expect(buildRegion(emptyModel())).toBeNull();
+  it('starts with the FOB fixed at the centre', () => {
+    const { model, fob } = siteModel();
+    expect(fob).toMatchObject({ x: 50, y: 50, z: 0, rot: 0 });
+    expect(model.pieces().filter((p) => p.type === 'fob')).toHaveLength(1);
   });
 
-  it('rejects pieces outside it', () => {
-    const model = emptyModel();
-    model.addPiece({ type: 'fob', x: 0, y: 0, z: 0 });
-    const result = place(model, { type: 'hesco_block', x: 60, y: 0, z: 0 });
+  it('rejects pieces outside the region', () => {
+    const result = place(siteModel().model, { type: 'hesco_block', x: 103, y: 0, z: 0 });
     expect(result.ok).toBe(false);
     expect(result.reasons).toContain(REASON.OUT_OF_REGION);
   });
 
-  it('exempts the FOB itself, since it creates the region', () => {
-    const model = emptyModel();
-    expect(place(model, { type: 'fob', x: 80, y: 80, z: 0 }).ok).toBe(true);
-  });
-});
-
-describe('grid and ceiling', () => {
-  it('rejects a piece hanging off the edge of the region', () => {
-    const { model } = modelWithFob();
-    const result = place(model, { type: 'bunker', x: 101, y: 0, z: 0 });
-    expect(result.reasons).toContain(REASON.OUT_OF_REGION);
-  });
-
-  it('keeps the FOB itself on the site', () => {
-    const model = emptyModel();
-    expect(place(model, { type: 'fob', x: 102, y: 0, z: 0 }).reasons).toContain(REASON.OUT_OF_GRID);
-  });
-
-  it('lets the region extend past the site when the FOB sits near an edge', () => {
-    const model = emptyModel();
-    model.addPiece({ type: 'fob', x: 2, y: 2, z: 0 });
-    expect(buildRegion(model)).toMatchObject({ x0: -48, x1: 55 });
-    // Negative ground is still buildable: the region is the authority, not the site.
-    expect(place(model, { type: 'hesco_block', x: -10, y: 0, z: 0 }).ok).toBe(true);
-    expect(place(model, { type: 'hesco_block', x: -60, y: 0, z: 0 }).reasons)
-      .toContain(REASON.OUT_OF_REGION);
+  it('accepts pieces right up to the edge', () => {
+    expect(place(siteModel().model, { type: 'hesco_block', x: 102, y: 102, z: 0 }).ok).toBe(true);
   });
 
   it('rejects a piece whose top passes the 16m limit', () => {
-    const { model } = modelWithFob();
-    const result = place(model, { type: 'bunker', x: 10, y: 10, z: 13 });
-    expect(result.reasons).toContain(REASON.ABOVE_CEILING);
+    expect(place(siteModel().model, { type: 'bunker', x: 10, y: 10, z: 13 }).reasons)
+      .toContain(REASON.ABOVE_CEILING);
+  });
+});
+
+describe('the FOB is a fixture', () => {
+  it('cannot be placed, because the site already has one', () => {
+    expect(place(siteModel().model, { type: 'fob', x: 10, y: 10, z: 0 }).reasons)
+      .toContain(REASON.DUPLICATE);
+  });
+
+  it('cannot be moved', () => {
+    const { model, fob } = siteModel();
+    expect(model.updatePiece(fob.id, { x: 10, y: 10 })).toBeNull();
+    expect(model.piece(fob.id)).toMatchObject({ x: 50, y: 50 });
+  });
+
+  it('cannot be deleted', () => {
+    const { model, fob } = siteModel();
+    expect(model.removePiece(fob.id)).toBeNull();
+    expect(model.piece(fob.id)).not.toBeNull();
+  });
+
+  it('is free', () => {
+    expect(catalog.get('fob').cost).toBe(0);
+  });
+
+  it('is kept out of the palette, since it cannot be placed', () => {
+    expect(catalog.placeable().map((e) => e.id)).not.toContain('fob');
+    expect(catalog.fixtures().map((e) => e.id)).toEqual(['fob']);
+  });
+
+  it('is not counted among the pieces the user placed', () => {
+    const { model } = siteModel();
+    expect(model.placedCount).toBe(0);
+    model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
+    expect(model.placedCount).toBe(1);
+    expect(model.count).toBe(2);
   });
 });
 
@@ -140,20 +153,6 @@ describe('collision', () => {
   });
 });
 
-describe('the one-FOB rule', () => {
-  it('rejects a second FOB', () => {
-    const { model } = modelWithFob();
-    const result = place(model, { type: 'fob', x: 10, y: 10, z: 0 });
-    expect(result.reasons).toContain(REASON.DUPLICATE);
-  });
-
-  it('does not count the FOB being moved against itself', () => {
-    const { model, fob } = modelWithFob();
-    const moved = { ...fob, x: 40 };
-    expect(canPlace(model, moved, { ignoreId: fob.id }).ok).toBe(true);
-  });
-});
-
 describe('drop to support', () => {
   it('drops to the ground over empty columns', () => {
     const { model } = modelWithFob();
@@ -182,9 +181,8 @@ describe('drop to support', () => {
 });
 
 describe('build-level rules', () => {
-  it('warns when no FOB is present', () => {
-    const model = emptyModel();
-    expect(validateBuild(model).some((i) => i.code === 'missing-required')).toBe(true);
+  it('never reports a missing FOB, because the site places it', () => {
+    expect(validateBuild(emptyModel())).toEqual([]);
   });
 
   it('is clean for a valid build', () => {
@@ -193,13 +191,15 @@ describe('build-level rules', () => {
     expect(validateBuild(model)).toEqual([]);
   });
 
-  it('flags stranded pieces when the FOB moves, rather than deleting them', () => {
-    const { model, fob } = modelWithFob();
-    const far = model.addPiece({ type: 'hesco_block', x: 100, y: 100, z: 0 });
-    model.updatePiece(fob.id, { x: 0, y: 0 });
+  it('flags a piece left unsupported by an edit, rather than deleting it', () => {
+    const { model } = siteModel();
+    const lower = model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
+    const upper = model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 1 });
+    model.updatePiece(lower.id, { x: 20 });
+
     const issues = validateBuild(model);
-    expect(issues.some((i) => i.pieceId === far.id && i.code === REASON.OUT_OF_REGION)).toBe(true);
-    expect(model.piece(far.id)).not.toBeNull();
+    expect(issues.some((i) => i.pieceId === upper.id && i.code === REASON.UNSUPPORTED)).toBe(true);
+    expect(model.piece(upper.id)).not.toBeNull();
   });
 });
 
@@ -209,8 +209,8 @@ describe('material tally', () => {
     model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
     model.addPiece({ type: 'hesco_block', x: 11, y: 10, z: 0 });
     const result = tally(model);
-    expect(result.total).toBe(250 + 10 + 10);
-    expect(result.hasPlaceholders).toBe(true);
+    expect(result.total).toBe(20); // the FOB is free
+    expect(result.hasPlaceholders).toBe(false);
     expect(result.rows.find((r) => r.id === 'hesco_block')).toMatchObject({ count: 2, cost: 20 });
   });
 });

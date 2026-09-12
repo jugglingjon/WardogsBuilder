@@ -46,7 +46,9 @@ export class FileActions {
     const shared = await readShare();
     if (shared) {
       const existing = this.storage.restore();
-      if (existing?.pieces?.length) {
+      // Only worth rescuing if there was something in it beyond the fixtures.
+      const fixtures = new Set(this.model.catalog.fixtures().map((e) => e.id));
+      if (existing?.pieces?.some((p) => !fixtures.has(p.type))) {
         this.storage.save(`Recovered ${formatWhen(Date.now())}`, existing);
       }
       fromDocument(this.model, shared);
@@ -78,9 +80,10 @@ export class FileActions {
   newBuild() {
     // Clearing the build also clears the undo stack, so there is no taking it
     // back. Anything already placed is worth one question.
-    if (this.model.count > 0 &&
+    const placed = this.model.placedCount;
+    if (placed > 0 &&
         !globalThis.confirm?.(
-          `Clear ${this.model.count} placed ${this.model.count === 1 ? 'element' : 'elements'} ` +
+          `Clear ${placed} placed ${placed === 1 ? 'element' : 'elements'} ` +
           'and start over? This cannot be undone.'
         )) {
       return;

@@ -81,6 +81,11 @@ the current tool.
 Pieces land on the highest surface under their footprint, or on the ground.
 Nothing floats, so there is no height control to think about.
 
+A build opens with the FOB already in the middle of the site and the ground
+reaching exactly 50 m from it in every direction. The FOB is part of the site
+rather than part of the build: no tool selects, moves or erases it, and it costs
+nothing.
+
 ## The plan overview
 
 The Plan button opens a read-only top-down projection beside the 3D view, for
@@ -113,8 +118,10 @@ and a local one never see each other's saves.
   element. No overhangs, no floating.
 - Only Hesco blocks and the Bunker can support. Nothing stacks on a FOB or an
   Air Defense.
-- Exactly one FOB, which defines the buildable region: its footprint plus 50 m
-  in every direction, a 103 × 103 m square.
+- Every construction has exactly one FOB, fixed at the centre of the site and
+  free. It cannot be placed, moved or removed. It defines the buildable region:
+  its footprint plus 50 m in every direction, a 103 × 103 m square, which is
+  also the whole ground plane.
 - Nothing may pass the 16 m build ceiling.
 
 ## Status

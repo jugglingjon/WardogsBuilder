@@ -186,7 +186,7 @@ model.on('piece:add', () => {
 });
 
 editor.setTool(TOOLS.PLACE);
-palette.select('fob');
+palette.select(catalog.placeable()[0].id);
 view.frame(null);
 
 // Restore the last session, or open a build carried in the link, before the

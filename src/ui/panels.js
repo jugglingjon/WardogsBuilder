@@ -2,7 +2,7 @@
  * Read-only reporting panels: build issues, the material tally, and grid stats.
  * Both redraw from the model on every change; they hold no state of their own.
  */
-import { validateBuild, tally, buildRegion } from '../model/validate.js';
+import { validateBuild, tally } from '../model/validate.js';
 import { coalesce } from './coalesce.js';
 
 export class IssuesPanel {
@@ -79,14 +79,13 @@ export class StatsPanel {
   }
 
   render() {
+    // The site and the buildable region are the same rectangle, so there is
+    // only one number worth showing.
     const { grid } = this.model;
-    const region = buildRegion(this.model);
     this.root.innerHTML = `
-      <div class="stat"><span>Grid</span><span class="mono">${grid.width} × ${grid.depth} × ${grid.height} m</span></div>
-      <div class="stat"><span>Build region</span><span class="mono">${
-        region ? `${region.x1 - region.x0} × ${region.y1 - region.y0} m` : 'no FOB placed'
-      }</span></div>
-      <div class="stat"><span>Elements</span><span class="mono">${this.model.count}</span></div>
+      <div class="stat"><span>Buildable area</span><span class="mono">${grid.width} × ${grid.depth} m</span></div>
+      <div class="stat"><span>Height limit</span><span class="mono">${grid.height} m</span></div>
+      <div class="stat"><span>Elements placed</span><span class="mono">${this.model.placedCount}</span></div>
       <div class="stat"><span>Occupied</span><span class="mono">${this.model.occupancy.size} m³</span></div>
     `;
   }

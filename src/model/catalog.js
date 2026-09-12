@@ -30,8 +30,22 @@ export class Catalog {
   byCategory() {
     return this.categories.map((category) => ({
       ...category,
-      elements: this.elements.filter((e) => e.category === category.id)
+      elements: this.placeable().filter((e) => e.category === category.id)
     }));
+  }
+
+  /**
+   * Elements the site places itself and the user cannot touch. The FOB is one:
+   * every construction has exactly one, at the centre, and it defines the area
+   * everything else has to fit inside.
+   */
+  fixtures() {
+    return this.elements.filter((e) => e.fixed);
+  }
+
+  /** Elements the palette can offer, which is everything not fixed. */
+  placeable() {
+    return this.elements.filter((e) => !e.fixed);
   }
 
   /** Elements flagged required, which drive build-level validation. */

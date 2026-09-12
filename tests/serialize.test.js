@@ -46,3 +46,45 @@ describe('save and load', () => {
     expect(() => fromDocument(model, doc)).toThrow(/watchtower/);
   });
 });
+
+describe('loading a build made before the FOB was fixed', () => {
+  it('moves a FOB left somewhere else back to the centre', () => {
+    const model = emptyModel();
+    const doc = {
+      schema: 1,
+      grid: model.grid,
+      pieces: [
+        { id: 'p1', type: 'fob', x: 2, y: 90, z: 0, rot: 90 },
+        { id: 'p2', type: 'hesco_block', x: 10, y: 10, z: 0, rot: 0 }
+      ]
+    };
+    fromDocument(model, doc);
+    const fob = model.pieces().find((p) => p.type === 'fob');
+    expect(fob).toMatchObject({ x: 50, y: 50, z: 0, rot: 0 });
+    expect(model.placedCount).toBe(1);
+  });
+
+  it('adds one to a build that has none', () => {
+    const model = emptyModel();
+    fromDocument(model, {
+      schema: 1,
+      grid: model.grid,
+      pieces: [{ id: 'p1', type: 'hesco_block', x: 10, y: 10, z: 0, rot: 0 }]
+    });
+    expect(model.pieces().filter((p) => p.type === 'fob')).toHaveLength(1);
+    expect(model.count).toBe(2);
+  });
+
+  it('throws away a duplicate FOB rather than keeping both', () => {
+    const model = emptyModel();
+    fromDocument(model, {
+      schema: 1,
+      grid: model.grid,
+      pieces: [
+        { id: 'p1', type: 'fob', x: 50, y: 50, z: 0, rot: 0 },
+        { id: 'p2', type: 'fob', x: 10, y: 10, z: 0, rot: 0 }
+      ]
+    });
+    expect(model.pieces().filter((p) => p.type === 'fob')).toHaveLength(1);
+  });
+});

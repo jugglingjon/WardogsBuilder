@@ -27,51 +27,18 @@ export const REASON_TEXT = {
 };
 
 /**
- * The buildable region: the region-defining element's footprint expanded by its
- * margin in every horizontal direction. Null when none is placed, in which case
- * the whole grid is available so the first one can go anywhere.
- */
-const regionCache = new WeakMap();
-
-export function buildRegion(model) {
-  const cached = regionCache.get(model);
-  if (cached && cached.revision === model.revision) return cached.region;
-  const region = computeRegion(model);
-  regionCache.set(model, { revision: model.revision, region });
-  return region;
-}
-
-function computeRegion(model) {
-  const defining = model.catalog.regionDefiningElement();
-  if (!defining) return null;
-  const piece = model.pieces().find((p) => p.type === defining.id);
-  if (!piece) return null;
-
-  const element = model.catalog.get(piece.type);
-  const margin = element.buildRegion.marginFromFootprint ?? 0;
-  const b = boundsOf(piece, element);
-  return {
-    x0: b.x0 - margin, x1: b.x1 + margin,
-    y0: b.y0 - margin, y1: b.y1 + margin,
-    definedBy: piece.id
-  };
-}
-
-/**
- * The area a piece may legally occupy: the build region once a FOB exists, and
- * the bare site before one does.
+ * The buildable region, which is the whole site.
  *
- * The region is centred on the FOB wherever the FOB is put, so it can extend
- * past the site the FOB was dropped on. That is intended. The site only bounds
- * where the FOB itself may go; once placed, the region it defines is the
- * authority on everything else, and the plan pane draws that rather than the
- * site.
+ * The FOB is fixed at the centre of the site, and the site is sized to reach
+ * exactly 50 m from it in every direction, so the region and the ground are the
+ * same rectangle by construction. Nothing has to scan the build to work out
+ * where you may put things.
  */
-export function buildArea(model) {
-  return buildRegion(model) ?? {
-    x0: 0, y0: 0, x1: model.grid.width, y1: model.grid.depth
-  };
+export function buildRegion(model) {
+  return { x0: 0, y0: 0, x1: model.grid.width, y1: model.grid.depth };
 }
+
+export const buildArea = buildRegion;
 
 /** Region size in metres, used to size the default grid. */
 export function regionExtent(element) {
@@ -109,13 +76,9 @@ export function canPlace(model, piece, { ignoreId = null, ignore = null } = {}) 
   const b = boundsOf(piece, element);
   const grid = model.grid;
 
-  // The region-defining element answers to the site, since it has not created
-  // a region yet. Everything else answers to the region it created.
   const region = buildRegion(model);
-  const site = { x0: 0, y0: 0, x1: grid.width, y1: grid.depth };
-  const area = element.buildRegion ? site : (region ?? site);
-  if (b.x0 < area.x0 || b.y0 < area.y0 || b.x1 > area.x1 || b.y1 > area.y1) {
-    reasons.add(element.buildRegion || !region ? REASON.OUT_OF_GRID : REASON.OUT_OF_REGION);
+  if (b.x0 < region.x0 || b.y0 < region.y0 || b.x1 > region.x1 || b.y1 > region.y1) {
+    reasons.add(REASON.OUT_OF_REGION);
   }
 
   if (b.z0 < 0) reasons.add(REASON.OUT_OF_GRID);
@@ -266,8 +229,8 @@ export function validateBuild(model) {
     }
   }
 
-  // Moving or deleting the region-defining piece can strand work outside the
-  // new region. Flag it and let the user decide; never delete it for them.
+  // An edit can strand work, by taking away the support under it. Flag it and
+  // let the user decide; never delete it for them.
   for (const piece of model.pieces()) {
     const result = canPlace(model, piece, { ignoreId: piece.id });
     if (result.ok) continue;
