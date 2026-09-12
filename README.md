@@ -8,9 +8,25 @@ optional top-down plan overview alongside.
 ```bash
 npm install
 npm run dev      # http://localhost:5173
+npm run dev:lan  # same, reachable from a phone on the same network
 npm test         # model core unit tests
 npm run build    # production bundle into dist/
+npm run preview  # serve the built bundle locally
 ```
+
+## Hosting it
+
+The tool is entirely static. There is no backend, no build step on the server
+and no database: saves live in the browser and a shared build travels inside the
+link. So hosting is copying a folder.
+
+```bash
+npm run build    # writes dist/
+```
+
+Upload the contents of `dist/` anywhere that serves files. Asset paths are
+relative, so it works at the root of a domain, in a subdirectory of shared
+hosting, or on a GitHub Pages project site, with no configuration.
 
 ## Where things are
 
