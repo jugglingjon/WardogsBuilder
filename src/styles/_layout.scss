@@ -124,3 +124,15 @@
 .status__warn { color: var(--c-warning); }
 
 .pane__header .btn { padding: 3px 9px; }
+
+.marquee {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px dashed var(--c-accent);
+  background: color-mix(in srgb, var(--c-accent) 14%, transparent);
+  pointer-events: none;
+  z-index: 5;
+
+  &[hidden] { display: none; }
+}

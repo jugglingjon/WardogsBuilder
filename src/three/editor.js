@@ -12,6 +12,8 @@ import {
 import { ROTATIONS, rotatedSize, boundsOf } from '../model/geometry.js';
 import { boundsOfPieces } from '../model/query.js';
 import { addPiece, deletePieces, movePieces, rotatePiece, composite } from '../model/commands.js';
+import { Marquee } from './marquee.js';
+import { piecesInScreenRect } from './screen-select.js';
 
 export const TOOLS = { SELECT: 'select', PLACE: 'place', ERASE: 'erase' };
 
@@ -20,6 +22,7 @@ export class SceneEditor {
   #move = null;
   #down = null;
   #pointers = new Set();
+  #marquee = null;
   #clipboard = null;
   #lastCell = null;
   #painted = new Set();
@@ -45,6 +48,8 @@ export class SceneEditor {
 
     this.movePreview = new THREE.Group();
     view.scene.add(this.movePreview);
+
+    this.marquee = new Marquee(canvas.parentElement);
 
     this.#bindPointer();
     this.#bindKeyboard();
@@ -147,6 +152,11 @@ export class SceneEditor {
 
     canvas.addEventListener('pointermove', (event) => {
       if (event.pointerType === 'touch') return; // the camera owns touch drags
+      if (this.#marquee) {
+        const at = this.#canvasPoint(event);
+        this.marquee.update(at.x, at.y);
+        return;
+      }
       if (this.#move) return this.#updateMove(event);
       const proposal = this.tool === TOOLS.PLACE
         ? this.placement.update(event, this.#paint ? this.#paintedIds : null)
@@ -206,6 +216,7 @@ export class SceneEditor {
         return;
       }
 
+      if (this.#marquee) this.#commitMarquee();
       if (this.#move) this.#commitMove();
       this.#paint = null;
       this.#down = null;
@@ -282,7 +293,11 @@ export class SceneEditor {
   #startSelect(event) {
     const id = this.#pieceAt(event);
     if (!id) {
-      if (!event.shiftKey) this.model.clearSelection();
+      // Empty ground: a drag rubber-bands, a click clears. The distinction is
+      // travel, so both gestures start the same way and settle on release.
+      this.#marquee = { additive: event.shiftKey };
+      const at = this.#canvasPoint(event);
+      this.marquee.start(at.x, at.y);
       return;
     }
     if (!this.model.selection.has(id)) this.model.select(id, { additive: event.shiftKey });
@@ -300,6 +315,11 @@ export class SceneEditor {
       delta: { dx: 0, dy: 0 },
       valid: true
     };
+  }
+
+  #canvasPoint(event) {
+    const rect = this.canvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   }
 
   #planePoint(event, plane) {
@@ -357,6 +377,20 @@ export class SceneEditor {
     this.view.invalidate();
   }
 
+  #commitMarquee() {
+    const { additive } = this.#marquee;
+    this.#marquee = null;
+    const rect = this.marquee.end();
+    if (!rect) {
+      // It never became a drag, so it was a click on empty ground.
+      if (!additive) this.model.clearSelection();
+      return;
+    }
+    const viewport = { width: this.canvas.clientWidth, height: this.canvas.clientHeight };
+    const ids = piecesInScreenRect(this.model, this.view.camera, viewport, rect);
+    if (ids.length || !additive) this.model.select(ids, { additive });
+  }
+
   #commitMove() {
     const { ids, delta, valid } = this.#move;
     this.#move = null;
@@ -386,7 +420,14 @@ export class SceneEditor {
         case 'b': case 'B': this.setTool(TOOLS.PLACE); break;
         case 'e': case 'E': this.setTool(TOOLS.ERASE); break;
         case 'r': case 'R': this.rotate(); break;
-        case 'Escape': this.model.clearSelection(); break;
+        case 'Escape':
+          if (this.#marquee) {
+            this.#marquee = null;
+            this.marquee.end();
+          } else {
+            this.model.clearSelection();
+          }
+          break;
         case 'Delete': case 'Backspace':
           event.preventDefault();
           this.deleteSelection();

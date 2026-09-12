@@ -61,6 +61,7 @@ status bar.
 | --- | --- |
 | Place | Pick an element, click, or drag to paint a run |
 | Select | `V`, then click. Shift-click to add |
+| Select several | `V`, then drag a rectangle from empty ground. Shift adds |
 | Move | Drag a selection. It commits on release, as one undo step |
 | Erase | `E`, then click or drag |
 | Rotate | `R`, on the pending piece or the selection |
@@ -121,9 +122,9 @@ and a local one never see each other's saves.
 All six phases are complete, and editing moved from the 2D grid into the 3D
 view along the way. See `docs/PLAN.md`.
 
-Known gap: marquee selection was dropped when the 2D editor was replaced, since
-a grid rectangle stopped meaning anything in perspective. Multi-select is
-shift-click; a screen-space marquee is the natural replacement.
+Marquee selection works in perspective: drag a rectangle from empty ground and
+anything it covers on screen is selected, whether or not something is in front
+of it.
 
 ## Theme
 

@@ -11,7 +11,8 @@ const GROUPS = [
     name: 'Tools',
     keys: [
       ['B', 'Place. Click, or drag to paint a run'],
-      ['V', 'Select. Click, shift-click to add, drag to move'],
+      ['V', 'Select. Click, shift-click to add, drag a piece to move it'],
+      ['V then drag', 'Rubber-band from empty ground to select several'],
       ['E', 'Erase. Click or drag'],
       ['R', 'Rotate the pending piece or the selection'],
       ['Delete', 'Delete the selection'],

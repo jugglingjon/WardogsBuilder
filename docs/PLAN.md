@@ -257,7 +257,8 @@ on touch it is repeated taps.
 
 | Tool | Key | Behaviour |
 | --- | --- | --- |
-| Select | `V` | Click to select, shift-click to add, drag to move |
+| Select | `V` | Click to select, shift-click to add, drag a piece to move it |
+| Marquee | part of Select | Drag from empty ground; shift adds to the selection |
 | Place | `B` | Places the palette element; drag to paint a run |
 | Erase | `E` | Click or drag to delete; `Delete` clears a selection |
 
@@ -267,6 +268,22 @@ and a cursor that never moved would otherwise stack a tower on its own last
 placement. And pieces painted during the current drag are excluded from
 targeting, because otherwise each one becomes the next ray's target and a
 stationary cursor walks a line of pieces sideways.
+
+**Marquee selection** works in screen space rather than on the grid, since a
+grid rectangle stops meaning anything in perspective. Each piece's eight box
+corners are projected and the rectangle they bound is tested against the drag,
+so a piece counts if it covers any of the dragged area. Corners behind the lens
+are dropped rather than projected, which would mirror them to the wrong side of
+the view.
+
+Occlusion is deliberately ignored: a marquee that skipped the pieces hidden
+behind a wall would be useless for the thing marquees are for. A consequence
+worth knowing is that a tilted camera catches anything whose silhouette falls
+under the rectangle, including pieces well behind the ones being aimed at.
+
+The gesture costs no new modifier. A drag that starts on a piece moves it, a
+drag that starts on empty ground rubber-bands, and a click on empty ground still
+clears, with travel deciding between the last two on release.
 
 **Moving** drags on a horizontal plane through the selection's base rather than
 raycasting geometry that is moving with the cursor. The preview outlines where
@@ -495,11 +512,6 @@ reasoning behind the rules is not lost:
    where it goes.
 
 ## 11a. Still open
-
-**Marquee selection.** Dragging a rectangle to select several pieces went away
-with the 2D grid, since a grid rectangle stopped meaning anything once editing
-moved into perspective. Multi-select is shift-click. A screen-space marquee is
-the natural replacement and has not been built.
 
 **Capped cut faces.** The section cut leaves the cut surfaces open rather than
 capped. It reads clearly enough as a section; capping needs a stencil pass.
