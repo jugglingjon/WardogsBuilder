@@ -259,12 +259,19 @@ the limit is visible at all times rather than discovered by a rejected click.
 - Scroll zooms at the cursor; middle-drag or space-drag pans.
 - `PageUp` and `PageDown` move between elevation slices.
 
-**Placement height.** When you place onto a slice, the piece drops to rest on
-whatever is beneath it within that column rather than floating at the slice
-height. This means walls stack naturally when you draw them over existing ones,
-and it is the behaviour that makes vertical building feel right without asking
-the user to think in Z. A modifier key forces placement at exactly the current
-slice for the cases where floating is intended.
+**Placement height.** A piece drops to rest on top of whatever is already in
+that column, or on the ground if it is clear. This is independent of the slice
+being edited: standing on the ground slice and hovering over a two metre stack
+places on top of the stack, because floating is illegal and there is nowhere
+else the piece could go. The slice decides what draws solid, not where pieces
+land. Holding Alt pins the piece to the slice exactly.
+
+**Site and region.** The region is centred on the FOB wherever the FOB is put,
+so it can extend past the site the FOB was dropped on. That is intended: the
+site only bounds where the FOB itself may go, and once placed the region it
+defines is the authority on everything else. The plan pane draws the region
+rather than the site, so the editable area and the legal area stay the same
+thing.
 
 ---
 
@@ -367,7 +374,7 @@ The client is designed to work fully without it.
 
 Each phase ends with something runnable.
 
-Phases 0 and 1 are complete as of the current branch.
+Phases 0 to 2 are complete as of the current branch.
 
 **Phase 0 — Scaffold.** ✅ Vite project, SCSS pipeline, two-pane responsive layout
 shell, toolbar and palette chrome. No behaviour.
@@ -378,7 +385,7 @@ FOB region, commands and history, serialisation. Unit tests for collision,
 rotated footprints, drop-to-support, region containment and undo. No UI; this is the layer everything depends on and the cheapest place to
 get it right.
 
-**Phase 2 — 2D editing.** Grid rendering, pan and zoom, elevation slices with
+**Phase 2 — 2D editing.** ✅ Grid rendering, pan and zoom, elevation slices with
 the below/above layers, palette selection, place and delete, ghost preview,
 validity feedback. At this point the tool is usable as a 2D-only planner.
 

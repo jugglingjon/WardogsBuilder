@@ -7,10 +7,13 @@
 export class Toolbar {
   #model;
   #history;
+  #onTool;
+  #tool = 'place';
 
-  constructor(root, { model, history }) {
+  constructor(root, { model, history, onTool }) {
     this.#model = model;
     this.#history = history;
+    this.#onTool = onTool;
     root.innerHTML = `
       <div class="toolbar__brand">
         <h1>Wardogs Builder</h1>
@@ -19,6 +22,11 @@ export class Toolbar {
       <div class="toolbar__group">
         <label class="visually-hidden" for="build-name">Build name</label>
         <input class="field" id="build-name" type="text" spellcheck="false" />
+      </div>
+      <div class="toolbar__group" role="group" aria-label="Tools">
+        <button class="btn" data-tool="select" title="Select (V)">Select</button>
+        <button class="btn" data-tool="place" title="Place (B)">Place</button>
+        <button class="btn" data-tool="erase" title="Erase (E)">Erase</button>
       </div>
       <div class="toolbar__group">
         <button class="btn" data-action="undo">Undo</button>
@@ -42,6 +50,11 @@ export class Toolbar {
     this.sliceDown = root.querySelector('[data-action="slice-down"]');
     this.sliceUp = root.querySelector('[data-action="slice-up"]');
 
+    this.toolButtons = [...root.querySelectorAll('[data-tool]')];
+    for (const button of this.toolButtons) {
+      button.addEventListener('click', () => this.#onTool?.(button.dataset.tool));
+    }
+
     this.nameField.value = model.name;
     this.nameField.addEventListener('input', () => model.setName(this.nameField.value));
     this.undoButton.addEventListener('click', () => history.undo());
@@ -55,7 +68,16 @@ export class Toolbar {
     this.render();
   }
 
+  /** Reflect the tool the controller settled on, however it was chosen. */
+  setTool(tool) {
+    this.#tool = tool;
+    this.render();
+  }
+
   render() {
+    for (const button of this.toolButtons ?? []) {
+      button.classList.toggle('is-active', button.dataset.tool === this.#tool);
+    }
     const { slice, grid } = this.#model;
     this.sliceValue.innerHTML = `<b>${slice}</b> / ${grid.height - 1} m`;
     this.sliceDown.disabled = slice <= 0;

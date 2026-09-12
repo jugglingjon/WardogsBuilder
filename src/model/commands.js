@@ -67,3 +67,28 @@ export function rotatePiece(model, id, rot) {
     undo() { model.updatePiece(id, { rot: previous }); }
   };
 }
+
+/**
+ * A group of commands that undo together, built up as a drag proceeds.
+ *
+ * Painting a run of walls should be one undo step, not one per cell, so the
+ * composite goes onto the history stack when the drag starts and grows as the
+ * cursor moves.
+ */
+export function composite(label) {
+  const done = [];
+  return {
+    label,
+    get size() { return done.length; },
+    push(command) {
+      command.do();
+      done.push(command);
+    },
+    do() {
+      for (const command of done) command.do();
+    },
+    undo() {
+      for (let i = done.length - 1; i >= 0; i--) done[i].undo();
+    }
+  };
+}

@@ -36,8 +36,23 @@ npm run build    # production bundle into dist/
 
 ## Status
 
-Phases 0 and 1 are complete: the layout shell and the tested model core.
-The 2D editor is phase 2 and the 3D view is phase 3. See `docs/PLAN.md`.
+Phases 0 to 2 are complete: the shell, the tested model core, and the 2D grid
+editor. The 3D view is phase 3. See `docs/PLAN.md`.
+
+## Using the plan pane
+
+| Action | How |
+| --- | --- |
+| Place | Pick an element, click, or drag to paint a run |
+| Select | `V`, then click. Shift-click to add |
+| Erase | `E`, then click or drag |
+| Rotate | `R`, on the pending piece or the selection |
+| Delete | `Delete` on a selection |
+| Pan | Middle-drag, right-drag, or hold space |
+| Zoom | Scroll at the cursor |
+| Frame the build | `Home`, or the Fit button |
+| Change elevation | `PageUp` and `PageDown` |
+| Pin to the current slice | Hold `Alt` while placing |
 
 ## Theme
 

@@ -38,6 +38,16 @@ export class Palette {
   }
 
   render() {
+    // Placing the last FOB should not leave the palette pointing at something
+    // that can no longer be placed.
+    if (this.#selectedId && this.#atLimit(this.#model.catalog.get(this.#selectedId))) {
+      const next = this.#model.catalog.elements.find((e) => !this.#atLimit(e));
+      if (next) {
+        this.#selectedId = next.id;
+        queueMicrotask(() => this.#onSelect?.(next.id));
+      }
+    }
+
     const groups = this.#model.catalog.byCategory().filter((g) => g.elements.length);
     this.#root.innerHTML = groups.map((group) => `
       <div class="palette__group">

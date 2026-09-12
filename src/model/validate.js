@@ -17,7 +17,7 @@ export const REASON = {
 };
 
 export const REASON_TEXT = {
-  [REASON.OUT_OF_GRID]: 'Outside the grid',
+  [REASON.OUT_OF_GRID]: 'Outside the site',
   [REASON.ABOVE_CEILING]: 'Above the build height limit',
   [REASON.OUT_OF_REGION]: 'Outside the build region',
   [REASON.OCCUPIED]: 'Overlaps something already placed',
@@ -43,6 +43,22 @@ export function buildRegion(model) {
     x0: b.x0 - margin, x1: b.x1 + margin,
     y0: b.y0 - margin, y1: b.y1 + margin,
     definedBy: piece.id
+  };
+}
+
+/**
+ * The area a piece may legally occupy: the build region once a FOB exists, and
+ * the bare site before one does.
+ *
+ * The region is centred on the FOB wherever the FOB is put, so it can extend
+ * past the site the FOB was dropped on. That is intended. The site only bounds
+ * where the FOB itself may go; once placed, the region it defines is the
+ * authority on everything else, and the plan pane draws that rather than the
+ * site.
+ */
+export function buildArea(model) {
+  return buildRegion(model) ?? {
+    x0: 0, y0: 0, x1: model.grid.width, y1: model.grid.depth
   };
 }
 
@@ -80,19 +96,17 @@ export function canPlace(model, piece, { ignoreId = null } = {}) {
   const b = boundsOf(piece, element);
   const grid = model.grid;
 
-  if (b.x0 < 0 || b.y0 < 0 || b.z0 < 0 || b.x1 > grid.width || b.y1 > grid.depth) {
-    reasons.add(REASON.OUT_OF_GRID);
+  // The region-defining element answers to the site, since it has not created
+  // a region yet. Everything else answers to the region it created.
+  const region = buildRegion(model);
+  const site = { x0: 0, y0: 0, x1: grid.width, y1: grid.depth };
+  const area = element.buildRegion ? site : (region ?? site);
+  if (b.x0 < area.x0 || b.y0 < area.y0 || b.x1 > area.x1 || b.y1 > area.y1) {
+    reasons.add(element.buildRegion || !region ? REASON.OUT_OF_GRID : REASON.OUT_OF_REGION);
   }
-  if (b.z1 > grid.height) reasons.add(REASON.ABOVE_CEILING);
 
-  // The region-defining element is exempt from the region, since it creates it.
-  if (!element.buildRegion) {
-    const region = buildRegion(model);
-    if (region && (b.x0 < region.x0 || b.x1 > region.x1 ||
-                   b.y0 < region.y0 || b.y1 > region.y1)) {
-      reasons.add(REASON.OUT_OF_REGION);
-    }
-  }
+  if (b.z0 < 0) reasons.add(REASON.OUT_OF_GRID);
+  if (b.z1 > grid.height) reasons.add(REASON.ABOVE_CEILING);
 
   for (const [x, y, z] of cellsOf(piece, element)) {
     const occupantId = model.occupancy.at(x, y, z);
@@ -116,19 +130,34 @@ export function canPlace(model, piece, { ignoreId = null } = {}) {
 }
 
 /**
- * The lowest z a piece can rest at in this column, so placing onto a slice
- * drops the piece onto whatever is beneath it rather than leaving it floating.
+ * The z a piece would rest at over this footprint, given a ceiling to search
+ * down from. The highest column wins, so a piece spanning uneven ground sits on
+ * top of the tallest thing under it rather than intersecting it.
  */
-export function dropZ(model, piece) {
+export function dropZ(model, piece, ceiling = model.grid.height) {
   const element = model.catalog.get(piece.type);
   const [w, d] = rotatedSize(element.size, piece.rot);
   let z = 0;
   for (let y = piece.y; y < piece.y + d; y++) {
     for (let x = piece.x; x < piece.x + w; x++) {
-      z = Math.max(z, model.occupancy.surfaceZ(x, y, model.grid.height));
+      z = Math.max(z, model.occupancy.surfaceZ(x, y, ceiling));
     }
   }
   return z;
+}
+
+/**
+ * Where a piece the cursor is over should land: on top of whatever is already
+ * in that column, or on the ground if it is clear.
+ *
+ * This is deliberately independent of the slice being edited. Standing on the
+ * ground slice and hovering over a two metre stack should place on top of the
+ * stack, not inside it, and since floating is illegal there is nowhere else a
+ * piece could go. The slice decides what is drawn solid, not where pieces land.
+ * Holding Alt overrides this and pins the piece to the slice exactly.
+ */
+export function restingZ(model, piece) {
+  return dropZ(model, piece);
 }
 
 /** Build-level rules, recomputed on change and shown in the issues panel. */

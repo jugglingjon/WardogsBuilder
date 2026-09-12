@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canPlace, dropZ, buildRegion, validateBuild, tally, REASON } from '../src/model/validate.js';
+import { canPlace, dropZ, restingZ, buildRegion, validateBuild, tally, REASON } from '../src/model/validate.js';
 import { modelWithFob, emptyModel, pad } from './helpers.js';
 
 const place = (model, spec, opts) => canPlace(model, { id: 'ghost', rot: 0, ...spec }, opts);
@@ -29,10 +29,25 @@ describe('the build region', () => {
 });
 
 describe('grid and ceiling', () => {
-  it('rejects a piece hanging off the edge', () => {
+  it('rejects a piece hanging off the edge of the region', () => {
     const { model } = modelWithFob();
     const result = place(model, { type: 'bunker', x: 101, y: 0, z: 0 });
-    expect(result.reasons).toContain(REASON.OUT_OF_GRID);
+    expect(result.reasons).toContain(REASON.OUT_OF_REGION);
+  });
+
+  it('keeps the FOB itself on the site', () => {
+    const model = emptyModel();
+    expect(place(model, { type: 'fob', x: 102, y: 0, z: 0 }).reasons).toContain(REASON.OUT_OF_GRID);
+  });
+
+  it('lets the region extend past the site when the FOB sits near an edge', () => {
+    const model = emptyModel();
+    model.addPiece({ type: 'fob', x: 2, y: 2, z: 0 });
+    expect(buildRegion(model)).toMatchObject({ x0: -48, x1: 55 });
+    // Negative ground is still buildable: the region is the authority, not the site.
+    expect(place(model, { type: 'hesco_block', x: -10, y: 0, z: 0 }).ok).toBe(true);
+    expect(place(model, { type: 'hesco_block', x: -60, y: 0, z: 0 }).reasons)
+      .toContain(REASON.OUT_OF_REGION);
   });
 
   it('rejects a piece whose top passes the 16m limit', () => {
@@ -197,5 +212,36 @@ describe('material tally', () => {
     expect(result.total).toBe(250 + 10 + 10);
     expect(result.hasPlaceholders).toBe(true);
     expect(result.rows.find((r) => r.id === 'hesco_block')).toMatchObject({ count: 2, cost: 20 });
+  });
+});
+
+describe('where a placed piece lands', () => {
+  it('rests on top of a two metre stack from any slice', () => {
+    const { model } = modelWithFob();
+    model.addPiece({ type: 'hesco_block_tall', x: 30, y: 30, z: 0 });
+    const ghost = { type: 'hesco_block', x: 30, y: 30, rot: 0 };
+    expect(restingZ(model, ghost)).toBe(2);
+    expect(place(model, { ...ghost, z: restingZ(model, ghost) }).ok).toBe(true);
+  });
+
+  it('lands an Air Defense on a 3x3 of tall blocks', () => {
+    const { model } = modelWithFob();
+    pad(model, 'hesco_block_tall', 30, 30, 3, 3);
+    const ghost = { type: 'air_defense', x: 30, y: 30, rot: 0 };
+    expect(restingZ(model, ghost)).toBe(2);
+    expect(place(model, { ...ghost, z: restingZ(model, ghost) }).ok).toBe(true);
+  });
+
+  it('falls to the ground over clear columns, never floating at the slice', () => {
+    const { model } = modelWithFob();
+    model.setSlice(7);
+    expect(restingZ(model, { type: 'hesco_block', x: 30, y: 30, rot: 0 })).toBe(0);
+  });
+
+  it('rests on the tallest column under a multi-cell footprint', () => {
+    const { model } = modelWithFob();
+    model.addPiece({ type: 'hesco_block', x: 40, y: 40, z: 0 });
+    model.addPiece({ type: 'bunker', x: 41, y: 40, z: 0 });
+    expect(restingZ(model, { type: 'hesco_wall_long', x: 40, y: 40, rot: 0 })).toBe(4);
   });
 });
