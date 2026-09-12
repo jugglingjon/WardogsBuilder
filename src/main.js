@@ -22,6 +22,7 @@ import { CutControl } from './ui/cut-control.js';
 import { Palette } from './ui/palette.js';
 import { IssuesPanel, TallyPanel, StatsPanel } from './ui/panels.js';
 import { bindShortcuts } from './ui/shortcuts.js';
+import { FileActions } from './ui/file-actions.js';
 import { seedSampleBuild } from './sample-build.js';
 
 document.querySelector('#app').innerHTML = `
@@ -150,11 +151,16 @@ document.querySelector('#fit-plan').addEventListener('click', () => overview.fit
 
 // --- chrome ------------------------------------------------------------------
 
+const files = new FileActions({ model, history, view });
+
 const toolbar = new Toolbar(document.querySelector('#toolbar'), {
   model,
   history,
   onTool: (tool) => editor.setTool(tool),
-  onTogglePlan: togglePlan
+  onTogglePlan: togglePlan,
+  onBuilds: () => files.openBuildsDialog(),
+  onShare: () => files.share(),
+  onImage: () => files.screenshot()
 });
 
 const palette = new Palette(document.querySelector('#palette'), {
@@ -185,8 +191,17 @@ model.on('piece:add', () => {
 
 editor.setTool(TOOLS.PLACE);
 palette.select('fob');
-updateEmptyState();
 view.frame(null);
 
+// Restore the last session, or open a build carried in the link, before the
+// first autosave can overwrite either.
+files.restore().then((outcome) => {
+  updateEmptyState();
+  if (outcome !== 'empty') {
+    autoFramed = true;
+    frameBuild();
+  }
+});
+
 // Exposed for inspection from the console while the tool is being built.
-window.wardogs = { model, history, catalog, view, sync, editor, placement, plan, overview, togglePlan, seedSampleBuild };
+window.wardogs = { model, history, catalog, view, sync, editor, placement, plan, overview, files, togglePlan, seedSampleBuild };

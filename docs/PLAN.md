@@ -369,14 +369,24 @@ pushes one command on release, not one per frame, so one undo reverses one drag.
 
 ## 9. Persistence and sharing
 
-1. **Autosave** to `localStorage` on a debounce, restored on load.
-2. **Named saves** in `localStorage`, listed in a load dialog.
+1. **Autosave** to `localStorage` on a debounce, restored on load. Every read is
+   defensive: storage can be full, disabled, or hold something an older version
+   wrote, and none of that should cost a session.
+2. **Named saves** in `localStorage`, listed in the Builds dialog. Saving under
+   an existing name overwrites that slot rather than duplicating it.
 3. **Export and import** a `.wardogs.json` file, carrying `schema` so old files
    are migrated rather than rejected.
-4. **Share link**: the build deflated and base64url-encoded into the URL hash.
-   Works on static hosting with no account. Oversized builds fall back to
-   offering the file export.
-5. **Screenshot**: render the 3D canvas to a PNG download.
+4. **Share link**: the build packed, deflated and base64url-encoded into the URL
+   hash. Packing replaces field names and element ids with positions and indices
+   before compressing, because the hash has to survive being pasted into a chat
+   window. A seventeen piece build comes to about 260 characters. The dialog
+   warns and points at the file export when a link gets long enough to be cut.
+5. **Screenshot**: renders and reads back in the same tick, since the drawing
+   buffer is cleared once a frame has been composited.
+
+**Opening a link never costs you the session.** A build in the hash wins over
+the autosave, but the autosave is first filed as a named save rather than
+overwritten. A mangled link falls back to the autosave instead of throwing.
 
 A PHP backend is only needed for short links, a shared gallery or server-side
 storage. If those become requirements it is a thin addition of two endpoints.
@@ -388,7 +398,7 @@ The client is designed to work fully without it.
 
 Each phase ends with something runnable.
 
-Phases 0 to 4 are complete as of the current branch.
+Phases 0 to 5 are complete as of the current branch.
 
 **Phase 0 — Scaffold.** ✅ Vite project, SCSS pipeline, two-pane responsive layout
 shell, toolbar and palette chrome. No behaviour.
@@ -414,7 +424,7 @@ and the section cut all moved to the 3D view, and the plan pane became a
 toggleable overview. The model core did not change: the landing rule was already
 `dropZ` and the red ghost was already the support validation.
 
-**Phase 5 — Persistence and reporting.** Autosave, named saves, import and
+**Phase 5 — Persistence and reporting.** ✅ Autosave, named saves, import and
 export, share link, screenshot, and the tally panel: element counts and total
 building material cost, with placeholder costs visibly marked.
 

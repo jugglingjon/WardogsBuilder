@@ -7,7 +7,7 @@ export class Toolbar {
   #onTool;
   #tool = 'place';
 
-  constructor(root, { model, history, onTool, onTogglePlan }) {
+  constructor(root, { model, history, onTool, onTogglePlan, onBuilds, onShare, onImage }) {
     this.#model = model;
     this.#history = history;
     this.#onTool = onTool;
@@ -32,6 +32,9 @@ export class Toolbar {
       </div>
       <div class="toolbar__spacer"></div>
       <div class="toolbar__group">
+        <button class="btn" data-action="builds" title="Save, open, import or export">Builds</button>
+        <button class="btn" data-action="share" title="Copy a link to this build">Share</button>
+        <button class="btn" data-action="image" title="Save the view as a PNG">Image</button>
         <button class="btn" data-action="plan" title="Show the plan overview">Plan</button>
       </div>
     `;
@@ -52,8 +55,14 @@ export class Toolbar {
     for (const button of this.toolButtons) {
       button.addEventListener('click', () => this.#onTool?.(button.dataset.tool));
     }
+    root.querySelector('[data-action="builds"]').addEventListener('click', () => onBuilds?.());
+    root.querySelector('[data-action="share"]').addEventListener('click', () => onShare?.());
+    root.querySelector('[data-action="image"]').addEventListener('click', () => onImage?.());
 
     model.on('reset', () => { this.nameField.value = model.name; this.render(); });
+    model.on('change', ({ reason }) => {
+      if (reason === 'name' && this.nameField.value !== model.name) this.nameField.value = model.name;
+    });
     history.on('change', () => this.render());
     this.render();
   }

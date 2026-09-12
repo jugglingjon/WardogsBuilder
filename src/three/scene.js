@@ -190,6 +190,19 @@ export class SceneView {
     this.invalidate();
   }
 
+  /**
+   * A PNG of the current view. Renders and reads back in the same tick, because
+   * the drawing buffer is cleared once the frame has been composited.
+   */
+  snapshot() {
+    try {
+      this.renderer.render(this.scene, this.camera);
+      return this.canvas.toDataURL('image/png');
+    } catch {
+      return null;
+    }
+  }
+
   /** Preset viewpoints, useful for comparing plans and taking screenshots. */
   view(preset) {
     const centre = this.controls.target.clone();

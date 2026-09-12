@@ -3,6 +3,8 @@
   align-items: center;
   gap: var(--gap);
   padding: 0 var(--gap);
+  overflow-x: auto;
+  scrollbar-width: none;
   background: var(--c-surface-raised);
   border-bottom: 1px solid var(--c-line);
 }
@@ -24,12 +26,14 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: none;
 }
 
 .toolbar__spacer { flex: 1; }
 
 .field {
   background: var(--c-surface);
+  flex: none;
   border: 1px solid var(--c-line);
   border-radius: var(--radius);
   color: var(--c-text);

@@ -55,6 +55,12 @@ The Plan button opens a read-only top-down projection beside the 3D view, for
 judging the whole site at once: where the perimeter runs and how far apart
 things are. Pan, zoom and click to select. It never edits.
 
+## Saving and sharing
+
+The current build autosaves and comes back on reload. Builds opens a dialog for
+named saves, import and export. Share packs the whole build into a link with no
+account and no server behind it. Image saves the view as a PNG.
+
 ## The rules it enforces
 
 - One cell is one cubic metre. Every element is a whole-cell box of
@@ -69,8 +75,8 @@ things are. Pan, zoom and click to select. It never edits.
 
 ## Status
 
-Phases 0 to 4 are complete, and editing has since moved from the 2D grid into
-the 3D view. Phase 5 adds saving and sharing. See `docs/PLAN.md`.
+Phases 0 to 5 are complete, and editing has since moved from the 2D grid into
+the 3D view. Phase 6 is polish. See `docs/PLAN.md`.
 
 Known gap: marquee selection was dropped when the 2D editor was replaced.
 Multi-select is shift-click for now.
