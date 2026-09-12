@@ -1,0 +1,61 @@
+/* ---------------------------------------------------------------------------
+ * Theme tokens.
+ *
+ * PLACEHOLDER THEME. The Wardogs site could not be read from this environment
+ * (the network egress proxy blocks wardogs.com), so these values are a stand-in
+ * chosen to suit the subject: dark field-equipment greys, a sand tone taken
+ * from the Hesco elements, and an amber accent.
+ *
+ * This is the only file that needs to change to adopt the real brand. Swap the
+ * hex values and the two font stacks below and the whole tool follows; nothing
+ * else in the codebase hardcodes a colour or a typeface.
+ * ------------------------------------------------------------------------- */
+
+:root {
+  /* Surfaces, darkest to lightest */
+  --c-bg: #0e1013;
+  --c-surface: #15181d;
+  --c-surface-raised: #1c2027;
+  --c-surface-hover: #232830;
+
+  /* Lines */
+  --c-line: #2b313a;
+  --c-line-strong: #3a424e;
+
+  /* Text */
+  --c-text: #e8eaed;
+  --c-text-muted: #a3abb6;
+  --c-text-faint: #808b98;
+
+  /* Accent and state */
+  --c-accent: #d98324;
+  --c-accent-hover: #eb9a3e;
+  --c-accent-ink: #140d04;
+  --c-danger: #e5706a;
+  --c-warning: #d9a441;
+  --c-ok: #5d9e6a;
+
+  /* The build surface */
+  --c-grid-ground: #191d22;
+  --c-grid-line: #262c34;
+  --c-grid-line-major: #333b45;
+  --c-region: #d98324;
+  --c-outside-region: #0a0c0e;
+
+  /* Typography. Both stacks end in system fonts so the tool renders correctly
+     before any webfont is chosen. */
+  --font-display: "Barlow Condensed", "Oswald", "Roboto Condensed",
+    ui-sans-serif, system-ui, sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+  --tracking-display: 0.06em;
+  --tracking-label: 0.09em;
+
+  /* Metrics */
+  --radius: 3px;
+  --rail-width: 232px;
+  --bar-height: 52px;
+  --gap: 12px;
+}
