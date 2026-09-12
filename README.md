@@ -28,6 +28,13 @@ Upload the contents of `dist/` anywhere that serves files. Asset paths are
 relative, so it works at the root of a domain, in a subdirectory of shared
 hosting, or on a GitHub Pages project site, with no configuration.
 
+### GitHub Pages
+
+`.github/workflows/pages.yml` builds, runs the tests and publishes on every
+push to `main` or the working branch. It needs Pages switched on once, under
+Settings → Pages → Build and deployment → Source → **GitHub Actions**. After
+that the site is at `https://jugglingjon.github.io/WardogsBuilder/`.
+
 ## Where things are
 
 | Path | What it holds |
