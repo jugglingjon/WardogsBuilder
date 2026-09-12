@@ -116,8 +116,11 @@ and a local one never see each other's saves.
   width × depth × height.
 - Every cell of a piece's base must rest on the ground or on a supporting
   element. No overhangs, no floating.
-- Only Hesco blocks and the Bunker can support. Nothing stacks on a FOB or an
-  Air Defense.
+- Only six elements can support others: the two Hesco blocks, the Hesco Wall,
+  the Bunker, the Recon Tower and the Indirect Fire Shelter.
+- The Gate and the FOB must sit on the ground, whatever is under them.
+- An element fills every cell of its declared box whatever shape it is drawn as,
+  so a hollow cylinder takes the same space as the block it replaces.
 - Every construction has exactly one FOB, fixed at the centre of the site and
   free. It cannot be placed, moved or removed. It defines the buildable region:
   its footprint plus 50 m in every direction, a 103 × 103 m square, which is

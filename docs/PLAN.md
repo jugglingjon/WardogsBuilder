@@ -56,40 +56,39 @@ cannot drift apart.
 Every building element is data in `data/elements.json`, seeded with the six
 known elements. Adding a part is an edit to that file, not a code change.
 
-| Element | Size (w × d × h) | Cost | Can support | Notes |
-| --- | --- | --- | --- | --- |
-| FOB | 3 × 3 × 1 | 0 | no | Fixed at the centre, free, and defines the site |
-| Hesco Block | 1 × 1 × 1 | 10 | yes | |
-| Tall Hesco Block | 1 × 1 × 2 | 20 | yes | |
-| Long Hesco Wall | 4 × 1 × 2 | 80 | yes | Four tall Hesco blocks in a row |
-| Bunker | 4 × 4 × 4 | 500\* | yes | |
-| Air Defense | 3 × 3 × 1 | 300\* | no | 360°, no firing arc |
-
-Cost is building material; the FOB is free. Values marked \* are placeholders and will change;
-the catalog flags them with `costPlaceholder` so the tally can mark them rather
-than presenting a guess as fact. The Hesco costs are internally consistent by
-construction: a tall block is two blocks, a long wall is four tall blocks.
+The catalog holds the game's 22 building elements, from a 1 × 1 × 1 Hesco block
+at 10 material up to a 4 × 3 × 4 Drill Rig at 1351. Rather than repeat the table
+here, `data/elements.json` is the record: it carries each element's dimensions,
+cost, whether it can support others, whether it must sit on the ground, and how
+it is drawn. Six of them support stacking (the two Hesco blocks, the Hesco Wall,
+the Bunker, the Recon Tower and the Indirect Fire Shelter) and two must sit on
+the ground (the Gate and the FOB).
 
 ```json
 {
-  "id": "hesco_wall_long",
-  "name": "Long Hesco Wall",
-  "category": "fortification",
-  "size": [4, 1, 2],
-  "color": "#b9a074",
-  "composedOf": { "element": "hesco_block_tall", "count": 4, "axis": "width" }
+  "id": "stingray",
+  "name": "Stingray",
+  "category": "weapon",
+  "size": [3, 3, 1],
+  "cost": 91,
+  "color": "#6f5537",
+  "shape": "cylinder",
+  "surface": "metal",
+  "canSupport": false,
+  "groundOnly": false
 }
 ```
 
-`composedOf` records that a part is shorthand for a repeated primitive. It earns
-its place twice: the renderers draw the seams between the four blocks instead of
-one undifferentiated slab, and the parts tally can report a Long Hesco Wall as
-either one piece or four blocks depending on how the game counts them.
+**Shape never changes the space an element takes.** A Stingray draws as a hollow
+cylinder and a Hedgehog as a six-pointed star, but both fill every cell of their
+declared box, and the placement ghost is drawn as that box rather than as the
+shape. What you are spending is the volume, so that is what the preview shows.
 
-Four further fields drive validation and reporting, all of them data rather than
-code: `canSupport` marks the elements that others may stack on, `cost` gives the
-building material price, `fixed` marks an element the site places and the user
-cannot touch, and `required` with `maxCount: 1` pins the FOB to exactly one per
+Five further fields drive validation and reporting, all of them data rather than
+code: `canSupport` marks the elements that others may stack on, `groundOnly`
+marks those that may only sit at ground level, `cost` gives the building
+material price, `fixed` marks an element the site places and the user cannot
+touch, and `required` with `maxCount: 1` pins the FOB to exactly one per
 construction.
 
 ### The site and its fixtures
@@ -321,14 +320,16 @@ Two levels, both surfaced in a small issues panel rather than by blocking edits.
 - **Support.** Every cell of a piece's base must rest on either the ground or
   the top face of a supporting element, with no exceptions and no overhang. A
   piece half on a block and half over air is rejected.
-- **Only Hesco blocks of any type and the Bunker can support.** Nothing stacks
-  on a FOB or an Air Defense. This is the `canSupport` flag, so the rule is a
-  catalog edit if the game says otherwise.
+- **Only six elements can support.** The two Hesco blocks, the Hesco Wall, the
+  Bunker, the Recon Tower and the Indirect Fire Shelter. This is the
+  `canSupport` flag, so the rule is a catalog edit if the game says otherwise.
+- **Some elements must sit on the ground**, whatever is under them. The Gate and
+  the FOB carry `groundOnly`.
 
 The reading of the support rule is that the chain must bottom out on the ground:
 a piece rests on supporting elements, which themselves rest on supporting
-elements or on the ground. An Air Defense at height therefore needs a full 3 × 3
-of supporting tops at one level, nine tall Hesco blocks or a Bunker roof.
+elements or on the ground. A Stingray at height therefore needs a full 3 × 3 of
+supporting tops at one level, nine large Hesco blocks or part of a Bunker roof.
 
 **Build rules**, recomputed on change:
 
@@ -350,12 +351,16 @@ fill plus one directional light for shading and shadows, a ground plane matching
 the grid extent, and a `GridHelper` aligned to the 2D grid so both panes read as
 the same space.
 
-**Meshes.** Pieces of the same element type share one `InstancedMesh`, so draw
-calls track the number of element types rather than the size of the build. Each
-piece owns a block of consecutive instances, one per part of its element, and a
-`composedOf` element such as the Long Hesco Wall has four, so it reads as four
-blocks rather than a wall-shaped lump. Removing a piece swaps the last block
-into the hole instead of rebuilding, which makes an erase constant time.
+**Meshes.** An element's shape compiles to a list of parts, each a geometry with
+a fixed transform inside the piece: a plain block is one part, a doorway is two
+jambs and a lintel, a hollow cylinder is two walls, a rim and a floor. Pieces of
+a type share one `InstancedMesh` per part, so draw calls track parts per element
+type rather than the size of the build. A thousand Hesco blocks cost one draw
+call; a thousand cylinders cost four.
+
+Every piece holds the same instance slot in each of its type's meshes, and
+removing one swaps the last slot into the hole instead of rebuilding, which
+makes an erase constant time.
 
 Every piece outline is drawn as one merged line set, rebuilt from the model
 rather than patched, and dropped above 2500 pieces where the lines stop reading
@@ -467,7 +472,7 @@ toggleable overview. The model core did not change: the landing rule was already
 
 **Phase 5 — Persistence and reporting.** ✅ Autosave, named saves, import and
 export, share link, screenshot, and the tally panel: element counts and total
-building material cost, with placeholder costs visibly marked.
+building material cost.
 
 **Phase 6 — Polish.** ✅ Shortcut overlay, first-run hints, element surfaces,
 touch support, contrast pass, and a performance pass against a deliberately
@@ -493,27 +498,23 @@ reasoning behind the rules is not lost:
 | Build region | The FOB footprint plus 50 m in every direction, 103 × 103 m |
 | Build height limit | 16 m |
 | Resource budget | None, but every element carries a building material cost |
-| Air Defense firing arc | None, 360°, so its rotation is cosmetic |
 
 **Still unknown, none of it blocking:**
 
-1. **Real cost values.** Only the Hesco family is confirmed, anchored on 10 for
-   a basic block. FOB, Bunker and Air Defense carry placeholders flagged in the
-   catalog. Replacing them is a JSON edit.
-2. **The full element list.** Six elements are modelled. Anything else in the
-   game is another catalog entry.
-3. **Long Hesco Wall accounting.** Whether the game counts one as a single
-   construction or as four tall blocks. It affects only what the tally reports,
-   and `composedOf` already records both readings.
-4. **Whether rotation matters for any element.** All six are currently
-   rotationally symmetric or unfacing, so rotation only matters for the shape of
-   the 4 × 1 wall. If a later element has a front, `facing` in the catalog is
-   where it goes.
+1. **Element facing.** Nothing in the catalog declares a front, so rotation only
+   matters for the shape of a footprint. If an element turns out to have one,
+   `facing` is where it goes.
+2. **Whether the Hesco Wall is one construction or four blocks.** It is priced
+   as one at 46, against 56 for four large blocks, so the tool counts it as one.
 
 ## 11a. Still open
 
 **Capped cut faces.** The section cut leaves the cut surfaces open rather than
 capped. It reads clearly enough as a section; capping needs a stencil pass.
+
+**Shape detail.** The shapes are honest but plain: a coil, a pillow, a star, a
+tube, an opening. Nothing carries the fittings a real Recon Tower or Drill Rig
+would, and every one of those is still a block.
 
 ## 12. Risks
 

@@ -64,9 +64,6 @@ export class Catalog {
           e.size.some((n) => !Number.isInteger(n) || n < 1)) {
         throw new Error(`Element ${e.id} must declare an integer [w, d, h] size of at least 1`);
       }
-      if (e.composedOf && !this.byId.has(e.composedOf.element)) {
-        throw new Error(`Element ${e.id} is composed of unknown element ${e.composedOf.element}`);
-      }
     }
   }
 }

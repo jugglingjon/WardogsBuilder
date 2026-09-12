@@ -7,7 +7,7 @@
  * actually covers. It draws every piece from above, lowest first, so what you
  * see is the roofline.
  */
-import { boundsOf, rotatedSize } from '../model/geometry.js';
+import { boundsOf } from '../model/geometry.js';
 import { buildRegion, buildArea } from '../model/validate.js';
 
 function readTheme() {
@@ -158,38 +158,7 @@ export class PlanRenderer {
     ctx.lineWidth = 1;
     ctx.strokeRect(a.px + 0.5, a.py + 0.5, w - 1, d - 1);
     ctx.globalAlpha = 1;
-    this.#drawSeams(piece, element, bounds);
     this.#drawLabel(element, a, w, d);
-    ctx.restore();
-  }
-
-  #drawSeams(piece, element, bounds) {
-    const composed = element.composedOf;
-    if (!composed || this.camera.scale < 5) return;
-    const { ctx, camera } = this;
-    const alongWidth = composed.axis === 'width';
-    const rotated = rotatedSize(element.size, piece.rot);
-    const horizontal = (piece.rot % 180 === 0) === alongWidth;
-
-    ctx.save();
-    ctx.globalAlpha = 0.35;
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let i = 1; i < composed.count; i++) {
-      if (horizontal) {
-        const x = bounds.x0 + (rotated[0] / composed.count) * i;
-        const px = Math.round(camera.gridToScreen(x, 0).px) + 0.5;
-        ctx.moveTo(px, camera.gridToScreen(0, bounds.y0).py);
-        ctx.lineTo(px, camera.gridToScreen(0, bounds.y1).py);
-      } else {
-        const y = bounds.y0 + (rotated[1] / composed.count) * i;
-        const py = Math.round(camera.gridToScreen(0, y).py) + 0.5;
-        ctx.moveTo(camera.gridToScreen(bounds.x0, 0).px, py);
-        ctx.lineTo(camera.gridToScreen(bounds.x1, 0).px, py);
-      }
-    }
-    ctx.stroke();
     ctx.restore();
   }
 

@@ -7,21 +7,366 @@
     "depth",
     "height"
   ],
+  "costUnits": "building material",
   "categories": [
     {
       "id": "command",
       "name": "Command"
     },
     {
-      "id": "fortification",
-      "name": "Fortification"
+      "id": "barrier",
+      "name": "Barriers"
     },
     {
-      "id": "defense",
-      "name": "Defense"
+      "id": "structure",
+      "name": "Structures"
+    },
+    {
+      "id": "weapon",
+      "name": "Weapons"
+    },
+    {
+      "id": "logistics",
+      "name": "Logistics"
     }
   ],
   "elements": [
+    {
+      "id": "hesco_block_small",
+      "name": "Hesco Block (Small)",
+      "category": "barrier",
+      "size": [
+        1,
+        1,
+        1
+      ],
+      "cost": 10,
+      "color": "#9a7a4f",
+      "shape": "block",
+      "surface": "gabion",
+      "canSupport": true,
+      "groundOnly": false
+    },
+    {
+      "id": "hesco_block_large",
+      "name": "Hesco Block (Large)",
+      "category": "barrier",
+      "size": [
+        1,
+        1,
+        2
+      ],
+      "cost": 14,
+      "color": "#9a7a4f",
+      "shape": "block",
+      "surface": "gabion",
+      "canSupport": true,
+      "groundOnly": false
+    },
+    {
+      "id": "barbed_wire",
+      "name": "Barbed Wire",
+      "category": "barrier",
+      "size": [
+        1,
+        2,
+        1
+      ],
+      "cost": 5,
+      "color": "#c6cbd1",
+      "shape": "spiral",
+      "surface": "metal",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "sandbag_wall",
+      "name": "Sandbag Wall",
+      "category": "barrier",
+      "size": [
+        1,
+        2,
+        1
+      ],
+      "cost": 10,
+      "color": "#9a7a4f",
+      "shape": "mound",
+      "surface": "gabion",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "hedgehog",
+      "name": "Hedgehog",
+      "category": "barrier",
+      "size": [
+        1,
+        1,
+        1
+      ],
+      "cost": 14,
+      "color": "#c6cbd1",
+      "shape": "hedgehog",
+      "surface": "metal",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "hesco_wall",
+      "name": "Hesco Wall",
+      "category": "barrier",
+      "size": [
+        4,
+        1,
+        2
+      ],
+      "cost": 46,
+      "color": "#9a7a4f",
+      "shape": "block",
+      "surface": "gabion",
+      "canSupport": true,
+      "groundOnly": false
+    },
+    {
+      "id": "bremer_wall",
+      "name": "Bremer Wall",
+      "category": "barrier",
+      "size": [
+        1,
+        1,
+        3
+      ],
+      "cost": 10,
+      "color": "#b0b5bb",
+      "shape": "block",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "gate",
+      "name": "Gate",
+      "category": "barrier",
+      "size": [
+        4,
+        1,
+        3
+      ],
+      "cost": 52,
+      "color": "#b0b5bb",
+      "shape": "doorway",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": true
+    },
+    {
+      "id": "door",
+      "name": "Door",
+      "category": "barrier",
+      "size": [
+        1,
+        1,
+        2
+      ],
+      "cost": 14,
+      "color": "#4a7a3c",
+      "shape": "doorway",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "bunker",
+      "name": "Bunker",
+      "category": "structure",
+      "size": [
+        4,
+        4,
+        2
+      ],
+      "cost": 61,
+      "color": "#6f5537",
+      "shape": "block",
+      "surface": "concrete",
+      "canSupport": true,
+      "groundOnly": false
+    },
+    {
+      "id": "recon_tower",
+      "name": "Recon Tower",
+      "category": "structure",
+      "size": [
+        4,
+        4,
+        4
+      ],
+      "cost": 61,
+      "color": "#6f5537",
+      "shape": "block",
+      "surface": "concrete",
+      "canSupport": true,
+      "groundOnly": false
+    },
+    {
+      "id": "indirect_fire_shelter",
+      "name": "Indirect Fire Shelter",
+      "category": "structure",
+      "size": [
+        5,
+        5,
+        3
+      ],
+      "cost": 61,
+      "color": "#6f5537",
+      "shape": "block",
+      "surface": "concrete",
+      "canSupport": true,
+      "groundOnly": false
+    },
+    {
+      "id": "loudspeaker",
+      "name": "Loudspeaker",
+      "category": "structure",
+      "size": [
+        2,
+        2,
+        6
+      ],
+      "cost": 61,
+      "color": "#b0b5bb",
+      "shape": "block",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "stingray",
+      "name": "Stingray",
+      "category": "weapon",
+      "size": [
+        3,
+        3,
+        1
+      ],
+      "cost": 91,
+      "color": "#6f5537",
+      "shape": "cylinder",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "l81_mortar",
+      "name": "L81 Mortar",
+      "category": "weapon",
+      "size": [
+        3,
+        3,
+        1
+      ],
+      "cost": 91,
+      "color": "#6f5537",
+      "shape": "cylinder",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "vanguard_ciws",
+      "name": "Vanguard CIWS",
+      "category": "weapon",
+      "size": [
+        4,
+        4,
+        4
+      ],
+      "cost": 901,
+      "color": "#b0b5bb",
+      "shape": "block",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "talon_9k_sam",
+      "name": "Talon 9K-SAM",
+      "category": "weapon",
+      "size": [
+        2,
+        2,
+        1
+      ],
+      "cost": 901,
+      "color": "#6f5537",
+      "shape": "cylinder",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "drill_rig",
+      "name": "Drill Rig",
+      "category": "logistics",
+      "size": [
+        4,
+        3,
+        4
+      ],
+      "cost": 1351,
+      "color": "#65696e",
+      "shape": "block",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "refuel_station",
+      "name": "Refuel Station",
+      "category": "logistics",
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "cost": 121,
+      "color": "#33512f",
+      "shape": "block",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "repair_station",
+      "name": "Repair Station",
+      "category": "logistics",
+      "size": [
+        2,
+        2,
+        1
+      ],
+      "cost": 121,
+      "color": "#33512f",
+      "shape": "block",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
+    {
+      "id": "builders_radio",
+      "name": "Builder's Radio",
+      "category": "logistics",
+      "size": [
+        2,
+        1,
+        1
+      ],
+      "cost": 13,
+      "color": "#33512f",
+      "shape": "block",
+      "surface": "concrete",
+      "canSupport": false,
+      "groundOnly": false
+    },
     {
       "id": "fob",
       "name": "FOB",
@@ -29,13 +374,14 @@
       "size": [
         3,
         3,
-        1
+        2
       ],
-      "color": "#4f5b3c",
       "cost": 0,
-      "costPlaceholder": false,
+      "color": "#2f4a72",
+      "shape": "block",
+      "surface": "concrete",
       "canSupport": false,
-      "facing": "none",
+      "groundOnly": true,
       "fixed": true,
       "required": true,
       "maxCount": 1,
@@ -44,88 +390,6 @@
         "marginFromFootprint": 50
       },
       "notes": "Forward operating base. Every construction has exactly one, placed at the centre of the site and free of charge. It cannot be placed, moved or removed, and it defines the buildable region: its footprint expanded by 50m in every horizontal direction."
-    },
-    {
-      "id": "hesco_block",
-      "name": "Hesco Block",
-      "category": "fortification",
-      "size": [
-        1,
-        1,
-        1
-      ],
-      "color": "#b9a074",
-      "cost": 10,
-      "costPlaceholder": false,
-      "canSupport": true,
-      "facing": "none"
-    },
-    {
-      "id": "hesco_block_tall",
-      "name": "Tall Hesco Block",
-      "category": "fortification",
-      "size": [
-        1,
-        1,
-        2
-      ],
-      "color": "#b9a074",
-      "cost": 20,
-      "costPlaceholder": false,
-      "canSupport": true,
-      "facing": "none"
-    },
-    {
-      "id": "hesco_wall_long",
-      "name": "Long Hesco Wall",
-      "category": "fortification",
-      "size": [
-        4,
-        1,
-        2
-      ],
-      "color": "#b9a074",
-      "cost": 80,
-      "costPlaceholder": false,
-      "canSupport": true,
-      "facing": "none",
-      "composedOf": {
-        "element": "hesco_block_tall",
-        "count": 4,
-        "axis": "width"
-      }
-    },
-    {
-      "id": "bunker",
-      "name": "Bunker",
-      "category": "fortification",
-      "size": [
-        4,
-        4,
-        4
-      ],
-      "color": "#6f7276",
-      "cost": 500,
-      "costPlaceholder": true,
-      "canSupport": true,
-      "facing": "none"
-    },
-    {
-      "id": "air_defense",
-      "name": "Air Defense",
-      "category": "defense",
-      "size": [
-        3,
-        3,
-        1
-      ],
-      "color": "#3f5464",
-      "cost": 300,
-      "costPlaceholder": true,
-      "canSupport": false,
-      "facing": "none",
-      "notes": "360 degree coverage, no firing arc, so rotation is cosmetic."
     }
-  ],
-  "costUnits": "building material"
+  ]
 }

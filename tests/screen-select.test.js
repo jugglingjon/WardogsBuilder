@@ -49,7 +49,7 @@ describe('projecting a piece', () => {
   it('grows with the piece', () => {
     const { model } = modelWithFob();
     const camera = overheadCamera();
-    const block = model.addPiece({ type: 'hesco_block', x: 50, y: 50, z: 0 });
+    const block = model.addPiece({ type: 'hesco_block_small', x: 50, y: 50, z: 0 });
     const bunker = model.addPiece({ type: 'bunker', x: 60, y: 60, z: 0 });
     const small = screenBoundsOfPiece(block, model.elementOf(block), camera, VIEWPORT);
     const large = screenBoundsOfPiece(bunker, model.elementOf(bunker), camera, VIEWPORT);
@@ -59,7 +59,7 @@ describe('projecting a piece', () => {
   it('reports nothing for a piece behind the camera', () => {
     const { model } = modelWithFob();
     const camera = overheadCamera();
-    const behind = model.addPiece({ type: 'hesco_block', x: 50, y: 50, z: 0 });
+    const behind = model.addPiece({ type: 'hesco_block_small', x: 50, y: 50, z: 0 });
     camera.position.set(50, -40, 50); // underground, looking further down
     camera.updateMatrixWorld(true);
     camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
@@ -71,9 +71,9 @@ describe('selecting with a rectangle', () => {
   it('catches the pieces inside it and leaves the rest', () => {
     const { model } = modelWithFob();
     const camera = overheadCamera();
-    const near = model.addPiece({ type: 'hesco_block', x: 48, y: 48, z: 0 });
-    const alsoNear = model.addPiece({ type: 'hesco_block', x: 49, y: 48, z: 0 });
-    const far = model.addPiece({ type: 'hesco_block', x: 70, y: 70, z: 0 });
+    const near = model.addPiece({ type: 'hesco_block_small', x: 48, y: 48, z: 0 });
+    const alsoNear = model.addPiece({ type: 'hesco_block_small', x: 49, y: 48, z: 0 });
+    const far = model.addPiece({ type: 'hesco_block_small', x: 70, y: 70, z: 0 });
 
     const a = screenOf(camera, 47, 47);
     const b = screenOf(camera, 51, 50);
@@ -87,8 +87,8 @@ describe('selecting with a rectangle', () => {
   it('selects a stack through its own roof, since occlusion is ignored', () => {
     const { model } = modelWithFob();
     const camera = overheadCamera();
-    const lower = model.addPiece({ type: 'hesco_block', x: 48, y: 48, z: 0 });
-    const upper = model.addPiece({ type: 'hesco_block', x: 48, y: 48, z: 1 });
+    const lower = model.addPiece({ type: 'hesco_block_small', x: 48, y: 48, z: 0 });
+    const upper = model.addPiece({ type: 'hesco_block_small', x: 48, y: 48, z: 1 });
 
     const rect = normalizeScreenRect(screenOf(camera, 47, 47), screenOf(camera, 50, 50));
     const ids = piecesInScreenRect(model, camera, VIEWPORT, rect);

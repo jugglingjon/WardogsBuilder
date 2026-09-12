@@ -54,16 +54,13 @@ export class TallyPanel {
         <div class="tally__row">
           <span>${row.name}</span>
           <span class="tally__count mono">×${row.count}</span>
-          <span class="tally__cost mono">${row.cost}${row.placeholder ? '*' : ''}</span>
+          <span class="tally__cost mono">${row.cost}</span>
         </div>
       `).join('')}
       <div class="tally__total">
         <span class="label">Total</span>
-        <b class="mono">${result.total}${result.hasPlaceholders ? '*' : ''}</b>
+        <b class="mono">${result.total}</b>
       </div>
-      ${result.hasPlaceholders
-        ? '<p class="tally__note">* Placeholder cost, not yet confirmed against the game.</p>'
-        : ''}
     `;
   }
 }

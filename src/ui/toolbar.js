@@ -15,7 +15,6 @@ export class Toolbar {
     root.innerHTML = `
       <div class="toolbar__brand">
         <h1>Wardogs Builder</h1>
-        <span class="label">Planner</span>
       </div>
       <div class="toolbar__group">
         <label class="visually-hidden" for="build-name">Build name</label>

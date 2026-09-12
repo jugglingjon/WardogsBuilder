@@ -6,7 +6,7 @@ describe('save and load', () => {
   it('round-trips a build', () => {
     const { model } = modelWithFob();
     model.setName('Outpost');
-    model.addPiece({ type: 'hesco_wall_long', x: 10, y: 10, z: 0, rot: 90 });
+    model.addPiece({ type: 'hesco_wall', x: 10, y: 10, z: 0, rot: 90 });
     const json = toJSON(model);
 
     const loaded = emptyModel();
@@ -18,7 +18,7 @@ describe('save and load', () => {
 
   it('rebuilds the occupancy index on load', () => {
     const { model } = modelWithFob();
-    const wall = model.addPiece({ type: 'hesco_wall_long', x: 10, y: 10, z: 0 });
+    const wall = model.addPiece({ type: 'hesco_wall', x: 10, y: 10, z: 0 });
     const loaded = emptyModel();
     fromJSON(loaded, toJSON(model));
     expect(loaded.occupancy.at(13, 10, 1)).toBe(wall.id);
@@ -26,10 +26,10 @@ describe('save and load', () => {
 
   it('keeps generated ids clear of loaded ones', () => {
     const { model } = modelWithFob();
-    model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
+    model.addPiece({ type: 'hesco_block_small', x: 10, y: 10, z: 0 });
     const loaded = emptyModel();
     fromJSON(loaded, toJSON(model));
-    const fresh = loaded.addPiece({ type: 'hesco_block', x: 20, y: 20, z: 0 });
+    const fresh = loaded.addPiece({ type: 'hesco_block_small', x: 20, y: 20, z: 0 });
     expect(loaded.piece(fresh.id)).not.toBeNull();
     expect(loaded.count).toBe(3);
   });
@@ -55,7 +55,7 @@ describe('loading a build made before the FOB was fixed', () => {
       grid: model.grid,
       pieces: [
         { id: 'p1', type: 'fob', x: 2, y: 90, z: 0, rot: 90 },
-        { id: 'p2', type: 'hesco_block', x: 10, y: 10, z: 0, rot: 0 }
+        { id: 'p2', type: 'hesco_block_small', x: 10, y: 10, z: 0, rot: 0 }
       ]
     };
     fromDocument(model, doc);
@@ -69,7 +69,7 @@ describe('loading a build made before the FOB was fixed', () => {
     fromDocument(model, {
       schema: 1,
       grid: model.grid,
-      pieces: [{ id: 'p1', type: 'hesco_block', x: 10, y: 10, z: 0, rot: 0 }]
+      pieces: [{ id: 'p1', type: 'hesco_block_small', x: 10, y: 10, z: 0, rot: 0 }]
     });
     expect(model.pieces().filter((p) => p.type === 'fob')).toHaveLength(1);
     expect(model.count).toBe(2);

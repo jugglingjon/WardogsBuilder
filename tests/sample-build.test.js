@@ -11,11 +11,11 @@ describe('the sample build', () => {
     expect(validateBuild(model)).toEqual([]);
   });
 
-  it('has an Air Defense resting on the bunker roof', () => {
+  it('has a Stingray resting on the bunker roof', () => {
     const model = new BuildModel({ catalog });
     seedSampleBuild(model);
-    const ad = model.pieces().find((p) => p.type === 'air_defense');
-    expect(ad.z).toBe(4);
+    const stingray = model.pieces().find((p) => p.type === 'stingray');
+    expect(stingray.z).toBe(2); // the bunker is two metres tall
   });
 
   it('reports a material cost', () => {

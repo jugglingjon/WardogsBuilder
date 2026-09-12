@@ -80,7 +80,7 @@ export class Palette {
             <span class="element__name">${element.name}</span><br />
             <span class="element__meta mono">${w}×${d}×${h} m</span>
           </span>
-          <span class="element__cost mono">${element.cost}${element.costPlaceholder ? '<sup>*</sup>' : ''}</span>
+          <span class="element__cost mono">${element.cost}</span>
         </button>
       </li>
     `;

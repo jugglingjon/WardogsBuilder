@@ -7,8 +7,8 @@ describe('pasting a group of stacks onto clear ground', () => {
     const { model } = modelWithFob();
     const clipboard = [];
     for (const [dx, dy] of [[0, 0], [13, 0], [0, 11], [13, 11]]) {
-      clipboard.push({ type: 'hesco_block_tall', rot: 0, dx, dy, dz: 0 });
-      clipboard.push({ type: 'hesco_block', rot: 0, dx, dy, dz: 2 });
+      clipboard.push({ type: 'hesco_block_large', rot: 0, dx, dy, dz: 0 });
+      clipboard.push({ type: 'hesco_block_small', rot: 0, dx, dy, dz: 2 });
     }
     const anchor = { x: 20, y: 20 };
 

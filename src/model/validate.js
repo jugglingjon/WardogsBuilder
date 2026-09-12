@@ -14,6 +14,7 @@ export const REASON = {
   OUT_OF_REGION: 'out-of-region',
   OCCUPIED: 'occupied',
   UNSUPPORTED: 'unsupported',
+  NOT_ON_GROUND: 'not-on-ground',
   DUPLICATE: 'duplicate'
 };
 
@@ -23,6 +24,7 @@ export const REASON_TEXT = {
   [REASON.OUT_OF_REGION]: 'Outside the build region',
   [REASON.OCCUPIED]: 'Overlaps something already placed',
   [REASON.UNSUPPORTED]: 'Not fully supported',
+  [REASON.NOT_ON_GROUND]: 'Must sit on the ground',
   [REASON.DUPLICATE]: 'Only one of these is allowed'
 };
 
@@ -83,6 +85,9 @@ export function canPlace(model, piece, { ignoreId = null, ignore = null } = {}) 
 
   if (b.z0 < 0) reasons.add(REASON.OUT_OF_GRID);
   if (b.z1 > grid.height) reasons.add(REASON.ABOVE_CEILING);
+
+  // Some elements are only legal at ground level, whatever is under them.
+  if (element.groundOnly && b.z0 !== 0) reasons.add(REASON.NOT_ON_GROUND);
 
   for (const [x, y, z] of cellsOf(piece, element)) {
     const occupantId = model.occupancy.at(x, y, z);
@@ -248,15 +253,14 @@ export function validateBuild(model) {
   return issues;
 }
 
-/** Element counts and total material cost, with placeholder costs flagged. */
+/** Element counts and total material cost. */
 export function tally(model) {
   const rows = new Map();
   for (const piece of model.pieces()) {
     const element = model.catalog.get(piece.type);
     const row = rows.get(element.id) ?? {
       id: element.id, name: element.name, count: 0,
-      unitCost: element.cost ?? 0, cost: 0,
-      placeholder: Boolean(element.costPlaceholder)
+      unitCost: element.cost ?? 0, cost: 0
     };
     row.count += 1;
     row.cost = row.count * row.unitCost;
@@ -265,7 +269,6 @@ export function tally(model) {
   const list = [...rows.values()];
   return {
     rows: list,
-    total: list.reduce((sum, r) => sum + r.cost, 0),
-    hasPlaceholders: list.some((r) => r.placeholder)
+    total: list.reduce((sum, r) => sum + r.cost, 0)
   };
 }

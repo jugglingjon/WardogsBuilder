@@ -7,7 +7,7 @@ describe('undo and redo', () => {
   it('reverses a placement and puts it back', () => {
     const { model } = modelWithFob();
     const history = new History();
-    history.run(addPiece(model, { type: 'hesco_block', x: 10, y: 10, z: 0 }));
+    history.run(addPiece(model, { type: 'hesco_block_small', x: 10, y: 10, z: 0 }));
     expect(model.count).toBe(2);
     history.undo();
     expect(model.count).toBe(1);
@@ -18,7 +18,7 @@ describe('undo and redo', () => {
   it('restores deleted pieces with their original ids and positions', () => {
     const { model } = modelWithFob();
     const history = new History();
-    const block = model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
+    const block = model.addPiece({ type: 'hesco_block_small', x: 10, y: 10, z: 0 });
     history.run(deletePieces(model, [block.id]));
     expect(model.piece(block.id)).toBeNull();
     history.undo();
@@ -28,8 +28,8 @@ describe('undo and redo', () => {
   it('treats a whole drag as one undo step', () => {
     const { model } = modelWithFob();
     const history = new History();
-    const a = model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
-    const b = model.addPiece({ type: 'hesco_block', x: 11, y: 10, z: 0 });
+    const a = model.addPiece({ type: 'hesco_block_small', x: 10, y: 10, z: 0 });
+    const b = model.addPiece({ type: 'hesco_block_small', x: 11, y: 10, z: 0 });
     history.run(movePieces(model, [
       { id: a.id, x: 20, y: 20, z: 0 },
       { id: b.id, x: 21, y: 20, z: 0 }
@@ -43,7 +43,7 @@ describe('undo and redo', () => {
   it('keeps the occupancy index in step through undo', () => {
     const { model } = modelWithFob();
     const history = new History();
-    const block = model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
+    const block = model.addPiece({ type: 'hesco_block_small', x: 10, y: 10, z: 0 });
     history.run(movePieces(model, [{ id: block.id, x: 20, y: 20, z: 0 }]));
     expect(model.occupancy.at(10, 10, 0)).toBeNull();
     history.undo();
@@ -54,7 +54,7 @@ describe('undo and redo', () => {
   it('rotates and unrotates', () => {
     const { model } = modelWithFob();
     const history = new History();
-    const wall = model.addPiece({ type: 'hesco_wall_long', x: 10, y: 10, z: 0 });
+    const wall = model.addPiece({ type: 'hesco_wall', x: 10, y: 10, z: 0 });
     history.run(rotatePiece(model, wall.id, 90));
     expect(model.occupancy.at(10, 13, 0)).toBe(wall.id);
     history.undo();
@@ -65,10 +65,10 @@ describe('undo and redo', () => {
   it('drops the redo stack once a new command runs', () => {
     const { model } = modelWithFob();
     const history = new History();
-    history.run(addPiece(model, { type: 'hesco_block', x: 10, y: 10, z: 0 }));
+    history.run(addPiece(model, { type: 'hesco_block_small', x: 10, y: 10, z: 0 }));
     history.undo();
     expect(history.canRedo).toBe(true);
-    history.run(addPiece(model, { type: 'hesco_block', x: 11, y: 10, z: 0 }));
+    history.run(addPiece(model, { type: 'hesco_block_small', x: 11, y: 10, z: 0 }));
     expect(history.canRedo).toBe(false);
   });
 
@@ -76,7 +76,7 @@ describe('undo and redo', () => {
     const { model } = modelWithFob();
     const history = new History({ limit: 3 });
     for (let x = 10; x < 20; x++) {
-      history.run(addPiece(model, { type: 'hesco_block', x, y: 10, z: 0 }));
+      history.run(addPiece(model, { type: 'hesco_block_small', x, y: 10, z: 0 }));
     }
     let undone = 0;
     while (history.undo()) undone++;

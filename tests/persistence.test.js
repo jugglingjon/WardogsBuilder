@@ -54,7 +54,7 @@ describe('local storage', () => {
   it('keeps named saves, newest first', () => {
     const { model } = modelWithFob();
     storage.save('Alpha', toDocument(model));
-    model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
+    model.addPiece({ type: 'hesco_block_small', x: 10, y: 10, z: 0 });
     storage.save('Bravo', toDocument(model));
 
     const list = storage.list();
@@ -65,7 +65,7 @@ describe('local storage', () => {
   it('overwrites a save of the same name instead of duplicating it', () => {
     const { model } = modelWithFob();
     const first = storage.save('Outpost', toDocument(model));
-    model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
+    model.addPiece({ type: 'hesco_block_small', x: 10, y: 10, z: 0 });
     const second = storage.save('Outpost', toDocument(model));
 
     expect(second.id).toBe(first.id);
@@ -89,8 +89,8 @@ describe('share links', () => {
   it('round-trips a build through the hash', async () => {
     const { model } = modelWithFob();
     model.setName('Shared outpost');
-    model.addPiece({ type: 'hesco_wall_long', x: 20, y: 20, z: 0, rot: 90 });
-    model.addPiece({ type: 'hesco_block', x: 20, y: 20, z: 2 });
+    model.addPiece({ type: 'hesco_wall', x: 20, y: 20, z: 0, rot: 90 });
+    model.addPiece({ type: 'hesco_block_small', x: 20, y: 20, z: 2 });
 
     const decoded = await decodeShare(await encodeShare(toDocument(model)));
     const loaded = emptyModel();
@@ -98,14 +98,14 @@ describe('share links', () => {
 
     expect(loaded.name).toBe('Shared outpost');
     expect(loaded.count).toBe(3);
-    expect(loaded.pieces().find((p) => p.type === 'hesco_wall_long'))
+    expect(loaded.pieces().find((p) => p.type === 'hesco_wall'))
       .toMatchObject({ x: 20, y: 20, z: 0, rot: 90 });
   });
 
   it('compresses, so a big build still fits a link', async () => {
     const { model } = modelWithFob();
     for (let x = 0; x < 40; x++) {
-      for (let y = 0; y < 10; y++) model.addPiece({ type: 'hesco_block', x: 20 + x, y: 20 + y, z: 0 });
+      for (let y = 0; y < 10; y++) model.addPiece({ type: 'hesco_block_small', x: 20 + x, y: 20 + y, z: 0 });
     }
     const doc = toDocument(model);
     const payload = await encodeShare(doc);
