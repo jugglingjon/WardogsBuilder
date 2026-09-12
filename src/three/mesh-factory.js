@@ -91,7 +91,7 @@ function canvasTexture(color, surface) {
 const part = (geometry, position = [0, 0, 0]) => ({ geometry, position });
 
 /** Every shape fits inside the element's own w x h x d box, centred on it. */
-const SHAPES = {
+export const SHAPES = {
   block: (w, h, d) => [part(new THREE.BoxGeometry(w, h, d))],
 
   /** A wall with an opening through it: two jambs and a lintel. */
@@ -229,6 +229,30 @@ const SHAPES = {
     ];
   },
 
+  /**
+   * Three crossing beams, tilted 45 degrees about X and Z so the star rests on
+   * its points the way a real anti-tank hedgehog does, rather than standing up
+   * as a plus sign. The tilt pulls every point inside the box, and the whole
+   * assembly is then dropped so its lowest point sits on the floor.
+   */
+  hedgehog(w, h, d) {
+    const t = Math.min(w, h, d) * 0.16;
+    const tilt = (geometry) => geometry.rotateX(Math.PI / 4).rotateZ(Math.PI / 4);
+    const beams = [
+      tilt(new THREE.BoxGeometry(w, t, t)),
+      tilt(new THREE.BoxGeometry(t, h, t)),
+      tilt(new THREE.BoxGeometry(t, t, d))
+    ];
+
+    let lowest = Infinity;
+    for (const geometry of beams) {
+      geometry.computeBoundingBox();
+      lowest = Math.min(lowest, geometry.boundingBox.min.y);
+    }
+    const rest = -h / 2 - lowest;
+    return beams.map((geometry) => part(geometry, [0, rest, 0]));
+  },
+
   /** A coil running along the piece's longer horizontal axis. */
   spiral(w, h, d) {
     const axis = d >= w ? 'z' : 'x';
@@ -252,7 +276,13 @@ export class MeshFactory {
     const element = this.catalog.get(elementId);
     const [w, d, h] = element.size;
 
-    const shape = SHAPES[element.shape] ?? SHAPES.block;
+    const shape = SHAPES[element.shape];
+    if (!shape) {
+      throw new Error(
+        `Element ${elementId} asks for the shape "${element.shape}", which does not exist. ` +
+        `Known shapes: ${Object.keys(SHAPES).join(', ')}.`
+      );
+    }
     const parts = shape(w, h, d); // world axes: x width, y height, z depth
     const metal = element.surface === 'metal';
 
