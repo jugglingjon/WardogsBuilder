@@ -92,6 +92,18 @@ The current build autosaves and comes back on reload. Builds opens a dialog for
 named saves, import and export. Share packs the whole build into a link with no
 account and no server behind it. Image saves the view as a PNG.
 
+## Starting over
+
+**Builds → New build** clears the current construction. It asks first when
+anything is placed, because it also clears the undo stack.
+
+Saved builds are deleted one at a time from the same dialog. Opening a share
+link consumes it: the build is taken out of the address bar so a later reload
+does not reopen it over your work.
+
+Everything is stored per browser origin under `wardogs.*` keys, so a hosted copy
+and a local one never see each other's saves.
+
 ## The rules it enforces
 
 - One cell is one cubic metre. Every element is a whole-cell box of

@@ -7,7 +7,7 @@
  */
 import { Storage } from '../model/storage.js';
 import { toDocument, toJSON, fromDocument } from '../model/serialize.js';
-import { shareUrl, readShare } from '../model/share.js';
+import { shareUrl, readShare, stripShare } from '../model/share.js';
 import { sharedDialog, toast } from './dialog.js';
 
 const AUTOSAVE_DELAY = 700;
@@ -51,6 +51,12 @@ export class FileActions {
       }
       fromDocument(this.model, shared);
       this.history.clear();
+
+      // Consume the link. Leaving the build in the address bar means every
+      // reload reopens it and quietly discards whatever you did since, so
+      // starting over becomes impossible without editing the URL by hand.
+      globalThis.history?.replaceState(null, '', stripShare(globalThis.location));
+
       toast('Opened a shared build');
       return 'shared';
     }
@@ -70,6 +76,15 @@ export class FileActions {
   // --- actions ---------------------------------------------------------------
 
   newBuild() {
+    // Clearing the build also clears the undo stack, so there is no taking it
+    // back. Anything already placed is worth one question.
+    if (this.model.count > 0 &&
+        !globalThis.confirm?.(
+          `Clear ${this.model.count} placed ${this.model.count === 1 ? 'element' : 'elements'} ` +
+          'and start over? This cannot be undone.'
+        )) {
+      return;
+    }
     this.model.reset({ name: 'Untitled construction', pieces: [] });
     this.history.clear();
     this.dialog.close();

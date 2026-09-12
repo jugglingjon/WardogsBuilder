@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Storage } from '../src/model/storage.js';
-import { encodeShare, decodeShare, shareUrl, readShare } from '../src/model/share.js';
+import { encodeShare, decodeShare, shareUrl, readShare, stripShare } from '../src/model/share.js';
 import { toDocument, fromDocument } from '../src/model/serialize.js';
 import { modelWithFob, emptyModel } from './helpers.js';
 
@@ -125,5 +125,22 @@ describe('share links', () => {
 
   it('returns nothing rather than throwing on a mangled link', async () => {
     expect(await readShare('#b=notarealpayload')).toBeNull();
+  });
+});
+
+describe('consuming a share link', () => {
+  it('removes the build from the address', () => {
+    expect(stripShare({ href: 'https://example.com/app/#b=zABC123' }))
+      .toBe('/app/');
+  });
+
+  it('keeps the rest of the hash and the query string', () => {
+    expect(stripShare({ href: 'https://example.com/app/?x=1#tab=plan&b=zABC' }))
+      .toBe('/app/?x=1#tab=plan');
+  });
+
+  it('leaves an address with no build in it alone', () => {
+    expect(stripShare({ href: 'https://example.com/app/#tab=plan' }))
+      .toBe('/app/#tab=plan');
   });
 });

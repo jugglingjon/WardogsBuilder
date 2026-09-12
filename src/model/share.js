@@ -79,6 +79,20 @@ export async function shareUrl(doc, base = globalThis.location?.href ?? '') {
   return url.toString();
 }
 
+/**
+ * The same address with the build taken out of it, so an opened link is not
+ * reopened by every later reload. Any other hash content is left alone.
+ */
+export function stripShare(location = globalThis.location) {
+  const url = new URL(location.href);
+  const rest = url.hash.replace(/^#/, '')
+    .split('&')
+    .filter((part) => !part.startsWith('b='))
+    .join('&');
+  url.hash = rest;
+  return url.pathname + url.search + (rest ? `#${rest}` : '');
+}
+
 /** The build encoded in a URL hash, or null. Never throws on a mangled link. */
 export async function readShare(hash = globalThis.location?.hash ?? '') {
   const match = /[#&]b=([A-Za-z0-9\-_]+)/.exec(hash);
