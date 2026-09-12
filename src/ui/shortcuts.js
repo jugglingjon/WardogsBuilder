@@ -1,5 +1,5 @@
 /** Keyboard shortcuts that belong to the whole app rather than one tool. */
-export function bindShortcuts({ model, history }) {
+export function bindShortcuts({ history }) {
   window.addEventListener('keydown', (event) => {
     const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName);
     if (typing) return;
@@ -14,14 +14,6 @@ export function bindShortcuts({ model, history }) {
       event.preventDefault();
       history.redo();
       return;
-    }
-    if (event.key === 'PageUp') {
-      event.preventDefault();
-      model.setSlice(model.slice + 1);
-    }
-    if (event.key === 'PageDown') {
-      event.preventDefault();
-      model.setSlice(model.slice - 1);
     }
   });
 }

@@ -1,8 +1,5 @@
 /**
- * Top bar: build name, undo and redo, and the elevation slice selector.
- *
- * Slices, not floors: elements have real metre heights and stack, so the left
- * pane edits one 1 m slice at a time. Ground level is z = 0.
+ * Top bar: build name, tools, undo and redo, and the plan overview toggle.
  */
 export class Toolbar {
   #model;
@@ -10,10 +7,11 @@ export class Toolbar {
   #onTool;
   #tool = 'place';
 
-  constructor(root, { model, history, onTool }) {
+  constructor(root, { model, history, onTool, onTogglePlan }) {
     this.#model = model;
     this.#history = history;
     this.#onTool = onTool;
+
     root.innerHTML = `
       <div class="toolbar__brand">
         <h1>Wardogs Builder</h1>
@@ -24,7 +22,7 @@ export class Toolbar {
         <input class="field" id="build-name" type="text" spellcheck="false" />
       </div>
       <div class="toolbar__group" role="group" aria-label="Tools">
-        <button class="btn" data-tool="select" title="Select (V)">Select</button>
+        <button class="btn" data-tool="select" title="Select and move (V)">Select</button>
         <button class="btn" data-tool="place" title="Place (B)">Place</button>
         <button class="btn" data-tool="erase" title="Erase (E)">Erase</button>
       </div>
@@ -34,55 +32,46 @@ export class Toolbar {
       </div>
       <div class="toolbar__spacer"></div>
       <div class="toolbar__group">
-        <span class="label">Elevation</span>
-        <div class="slice">
-          <button class="slice__step" data-action="slice-down" aria-label="Lower slice">−</button>
-          <span class="slice__value mono" data-slice-value></span>
-          <button class="slice__step" data-action="slice-up" aria-label="Raise slice">+</button>
-        </div>
+        <button class="btn" data-action="plan" title="Show the plan overview">Plan</button>
       </div>
     `;
 
     this.nameField = root.querySelector('#build-name');
-    this.sliceValue = root.querySelector('[data-slice-value]');
     this.undoButton = root.querySelector('[data-action="undo"]');
     this.redoButton = root.querySelector('[data-action="redo"]');
-    this.sliceDown = root.querySelector('[data-action="slice-down"]');
-    this.sliceUp = root.querySelector('[data-action="slice-up"]');
-
+    this.planButton = root.querySelector('[data-action="plan"]');
     this.toolButtons = [...root.querySelectorAll('[data-tool]')];
-    for (const button of this.toolButtons) {
-      button.addEventListener('click', () => this.#onTool?.(button.dataset.tool));
-    }
 
     this.nameField.value = model.name;
     this.nameField.addEventListener('input', () => model.setName(this.nameField.value));
     this.undoButton.addEventListener('click', () => history.undo());
     this.redoButton.addEventListener('click', () => history.redo());
-    this.sliceDown.addEventListener('click', () => model.setSlice(model.slice - 1));
-    this.sliceUp.addEventListener('click', () => model.setSlice(model.slice + 1));
+    this.planButton.addEventListener('click', () => {
+      this.planButton.classList.toggle('is-active', onTogglePlan?.());
+    });
+    for (const button of this.toolButtons) {
+      button.addEventListener('click', () => this.#onTool?.(button.dataset.tool));
+    }
 
-    model.on('slice:change', () => this.render());
     model.on('reset', () => { this.nameField.value = model.name; this.render(); });
     history.on('change', () => this.render());
     this.render();
   }
 
-  /** Reflect the tool the controller settled on, however it was chosen. */
+  /** Reflect the tool the editor settled on, however it was chosen. */
   setTool(tool) {
     this.#tool = tool;
     this.render();
   }
 
+  setPlanVisible(visible) {
+    this.planButton.classList.toggle('is-active', visible);
+  }
+
   render() {
-    for (const button of this.toolButtons ?? []) {
+    for (const button of this.toolButtons) {
       button.classList.toggle('is-active', button.dataset.tool === this.#tool);
     }
-    const { slice, grid } = this.#model;
-    this.sliceValue.innerHTML = `<b>${slice}</b> / ${grid.height - 1} m`;
-    this.sliceDown.disabled = slice <= 0;
-    this.sliceUp.disabled = slice >= grid.height - 1;
-
     this.undoButton.disabled = !this.#history.canUndo;
     this.redoButton.disabled = !this.#history.canRedo;
     this.undoButton.title = this.#history.undoLabel ?? 'Nothing to undo';

@@ -1,7 +1,7 @@
 # WardogsBuilder
 
-Building design tool for the game Wardogs. A 2D grid editor on the left, a live
-3D view of what you built on the right.
+Building design tool for the game Wardogs. Construct in a 3D view, with an
+optional top-down plan overview alongside.
 
 ## Running it
 
@@ -19,8 +19,41 @@ npm run build    # production bundle into dist/
 | `docs/PLAN.md` | Architecture, rules, delivery phases, open questions |
 | `data/elements.json` | The element catalog. Sizes, costs and rules live here, not in code |
 | `src/model/` | The tested core: grid maths, occupancy, validation, undo |
+| `src/three/` | The scene, the placement ghost, and the editor |
+| `src/editor/` | The read-only plan overview |
 | `src/ui/` | Palette, toolbar and reporting panels |
 | `src/styles/_tokens.scss` | Every colour and font in the tool, in one file |
+
+## Building
+
+Everything is built in the 3D view. Point at the site and a ghost shows exactly
+where the piece lands, red when it cannot go there, with the reason named in the
+status bar.
+
+| Action | How |
+| --- | --- |
+| Place | Pick an element, click, or drag to paint a run |
+| Select | `V`, then click. Shift-click to add |
+| Move | Drag a selection. It commits on release, as one undo step |
+| Erase | `E`, then click or drag |
+| Rotate | `R`, on the pending piece or the selection |
+| Delete | `Delete` on a selection |
+| Copy, paste, duplicate | `Ctrl+C`, `Ctrl+V`, `Ctrl+D` |
+| Undo, redo | `Ctrl+Z`, `Ctrl+Shift+Z` |
+| Orbit | Right-drag |
+| Pan | Middle-drag |
+| Zoom | Scroll |
+| Frame the build | The Frame button, or the Top, Front and Corner presets |
+| Section cut | Clip, then move the height with the stepper or `PageUp` and `PageDown` |
+
+Pieces land on the highest surface under their footprint, or on the ground.
+Nothing floats, so there is no height control to think about.
+
+## The plan overview
+
+The Plan button opens a read-only top-down projection beside the 3D view, for
+judging the whole site at once: where the perimeter runs and how far apart
+things are. Pan, zoom and click to select. It never edits.
 
 ## The rules it enforces
 
@@ -36,33 +69,11 @@ npm run build    # production bundle into dist/
 
 ## Status
 
-Phases 0 to 4 are complete: the shell, the tested model core, the 2D grid
-editor, the 3D view, and full editing. Phase 5 adds saving, sharing and the
-material tally as a first-class panel. See `docs/PLAN.md`.
+Phases 0 to 4 are complete, and editing has since moved from the 2D grid into
+the 3D view. Phase 5 adds saving and sharing. See `docs/PLAN.md`.
 
-## Using the plan pane
-
-| Action | How |
-| --- | --- |
-| Place | Pick an element, click, or drag to paint a run |
-| Select | `V`, then click. Shift-click to add. Drag empty ground for a marquee |
-| Move | Drag a selection. It commits on release, as one undo step |
-| Copy, paste, duplicate | `Ctrl+C`, `Ctrl+V`, `Ctrl+D`. The group drops onto whatever is under it |
-| Erase | `E`, then click or drag |
-| Rotate | `R`, on the pending piece or the selection |
-| Delete | `Delete` on a selection |
-| Pan | Middle-drag, right-drag, or hold space |
-| Zoom | Scroll at the cursor |
-| Frame the build | `Home`, or the Fit button |
-| Change elevation | `PageUp` and `PageDown` |
-| Pin to the current slice | Hold `Alt` while placing |
-
-## Using the view pane
-
-Drag to orbit, scroll to zoom, right-drag to pan. Top, Front and Corner jump to
-preset viewpoints and Frame fits the camera to the build. Clicking a piece
-selects it and moves the plan pane to that piece's elevation. Clip cuts the view
-off above the current elevation, so you can see inside a bunker.
+Known gap: marquee selection was dropped when the 2D editor was replaced.
+Multi-select is shift-click for now.
 
 ## Theme
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { canMove, canPlaceAll, validateBuild, REASON } from '../src/model/validate.js';
-import { piecesInRect, normalizeRect, boundsOfPieces } from '../src/model/query.js';
+import { boundsOfPieces } from '../src/model/query.js';
 import { modelWithFob, pad } from './helpers.js';
 
 describe('moving a selection', () => {
@@ -94,28 +94,7 @@ describe('pasting', () => {
   });
 });
 
-describe('marquee selection', () => {
-  it('normalises a rectangle dragged in any direction', () => {
-    expect(normalizeRect({ x: 9, y: 4 }, { x: 3, y: 8 }))
-      .toEqual({ x0: 3, y0: 4, x1: 10, y1: 9 });
-  });
-
-  it('catches pieces overlapping the rectangle on this slice', () => {
-    const { model } = modelWithFob();
-    const a = model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
-    const b = model.addPiece({ type: 'hesco_block', x: 12, y: 10, z: 0 });
-    model.addPiece({ type: 'hesco_block', x: 30, y: 30, z: 0 });
-    const ids = piecesInRect(model, { x0: 9, y0: 9, x1: 13, y1: 12 }, 0);
-    expect(ids.sort()).toEqual([a.id, b.id].sort());
-  });
-
-  it('ignores pieces that are not on the slice being edited', () => {
-    const { model } = modelWithFob();
-    model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });
-    model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 1 });
-    expect(piecesInRect(model, { x0: 9, y0: 9, x1: 13, y1: 12 }, 1)).toHaveLength(1);
-  });
-
+describe('selection geometry', () => {
   it('measures the box around a selection', () => {
     const { model } = modelWithFob();
     const a = model.addPiece({ type: 'hesco_block', x: 10, y: 10, z: 0 });

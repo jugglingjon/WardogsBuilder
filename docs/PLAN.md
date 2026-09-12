@@ -1,7 +1,9 @@
 # WardogsBuilder — Development Plan
 
 A browser-based planning tool for designing constructions in the game Wardogs.
-Two panes: a 2D grid editor on the left, a live 3D preview on the right.
+Building happens in a 3D view: point at the site, see exactly where the piece
+lands, click. A plan overview can be toggled on beside it for judging the whole
+site at once.
 
 ---
 
@@ -9,10 +11,11 @@ Two panes: a 2D grid editor on the left, a live 3D preview on the right.
 
 **In scope for v1**
 
-- Pick a building element from a palette and place it on a 2D grid.
+- Pick a building element from a palette and place it directly in the 3D view.
+- See a ghost of where it would land before committing, red when it cannot go
+  there, with the reason named.
 - Move placed elements by dragging, rotate them, and delete them.
-- See a live, low-fidelity 3D representation of the build in the right pane.
-- Orbit, zoom and pan the 3D camera around the build.
+- Orbit, zoom and pan the camera around the build.
 - Stacking: elements have real heights and can sit on top of each other.
 - Save, load, export and share a design.
 
@@ -150,7 +153,7 @@ subscriber that also supports click-to-select.
 
 ```
                  +---------------------+
-   input  -->    |   EditorController  |
+   input  -->    |    SceneEditor      |
  (mouse/keys)    |  tools, selection   |
                  +----------+----------+
                             | commands
@@ -162,8 +165,9 @@ subscriber that also supports click-to-select.
                       | change    | change
                       v           v
              +----------------+  +------------------+
-             |  GridRenderer  |  |  SceneRenderer   |
-             |   (canvas 2D)  |  |   (three.js)     |
+             |   SceneSync    |  |   PlanRenderer   |
+             |   (three.js)   |  |  (canvas, read   |
+             |    the editor  |  |   only overview) |
              +----------------+  +------------------+
 ```
 
@@ -193,16 +197,16 @@ command object, so undo and redo are uniform.
 │   │   ├── commands.js        # AddPiece, MovePiece, RotatePiece, DeletePieces
 │   │   ├── history.js         # undo/redo stack
 │   │   └── serialize.js       # save/load/export, schema versioning
-│   ├── editor/
-│   │   ├── grid-renderer.js   # grid, pieces, ghosts, selection
-│   │   ├── camera2d.js        # pan/zoom, screen <-> grid transforms
-│   │   ├── controller.js      # pointer/keyboard handling, tool dispatch
-│   │   └── tools/             # select.js, place.js, move.js, erase.js
 │   ├── three/
-│   │   ├── scene.js           # renderer, lights, ground, grid helper
+│   │   ├── scene.js           # renderer, lights, ground, camera, section cut
 │   │   ├── mesh-factory.js    # element -> geometry, cached per type
 │   │   ├── sync.js            # model events -> scene graph deltas
-│   │   └── picking.js         # raycast select, hover highlight
+│   │   ├── placement.js       # where a piece would land, and its ghost
+│   │   └── editor.js          # pointer/keyboard handling, tools
+│   ├── editor/
+│   │   ├── camera2d.js        # pan/zoom, screen <-> grid transforms
+│   │   ├── plan-renderer.js   # read-only top-down projection
+│   │   └── overview.js        # pan, zoom and click-select for the plan
 │   ├── ui/
 │   │   ├── palette.js         # categorised element list
 │   │   ├── toolbar.js         # tools, elevation slice, undo/redo
@@ -216,64 +220,63 @@ command object, so undo and redo are uniform.
 
 ---
 
-## 5. The 2D editor pane
+## 5. Building in the 3D view
 
-**Elevation slices, not floors.** Because elements have real metre heights and
-stack, the left pane edits one 1 m elevation slice at a time. The toolbar shows
-the current slice, `z = 0` being ground level. A Bunker placed at `z = 0`
-occupies slices 0 through 3, so it appears on all four.
+An earlier draft made the 2D grid the editor and the 3D view a preview. That was
+wrong, and the reason is worth recording: height is invisible from above, so
+every stacking feature became a workaround. An elevation slice selector, a
+modifier key to override it, a rule that a piece drops down its column
+regardless of which slice you were editing. That last rule existed precisely
+because the slice you edit and the height you get were different things. In 3D
+they are the same thing and the rule disappears.
 
-Each slice draws in three layers so context is never lost:
+**Targeting.** A ray from the cursor hits either the ground or a piece. Hitting
+the top of something targets its own column; hitting a side targets the column
+beside it. That is the rule every building game uses, and it is what lets you
+run a wall along the outside of another one.
 
-1. Pieces whose volume includes this slice, drawn solid.
-2. Pieces below, drawn faintly, so you can align to what you are building on.
-3. Pieces above, drawn as a thin outline only, so a roof does not hide the room.
+**Landing.** The piece settles on the highest surface under its footprint, or on
+the ground. Since floating is illegal there is nowhere else it could go, so no
+modifier key and no height control are needed.
 
-**Rendering.** A single canvas redrawn on demand at device pixel ratio. Each
-piece draws as a rectangle of its rotated width and depth, filled with its
-catalog colour and labelled when the zoom level allows. `composedOf` parts draw
-their internal seams.
+**The ghost** is a translucent box at the landing spot, with its footprint
+painted on the surface beneath it so the exact cells are never in doubt at a
+grazing camera angle. It turns red when the placement is illegal and the status
+bar names every reason, so a refusal is never a mystery.
 
-The build region draws as a boundary line with the area outside it dimmed, so
-the limit is visible at all times rather than discovered by a rejected click.
+**Mouse layout.** Left drives the active tool, right-drag orbits, middle-drag
+pans, scroll zooms. Left is not shared with the camera, so a click never has to
+be told apart from a camera move, and drag to paint a run of walls works.
 
 **Tools**
 
 | Tool | Key | Behaviour |
 | --- | --- | --- |
-| Select | `V` | Click to select, shift-click to add, drag empty ground for a marquee |
-| Place | `B` | Places the palette element; drag to repeat along a line |
-| Move | part of Select | Drag a selection, with live collision feedback. Commits on release |
+| Select | `V` | Click to select, shift-click to add, drag to move |
+| Place | `B` | Places the palette element; drag to paint a run |
 | Erase | `E` | Click or drag to delete; `Delete` clears a selection |
 
-**Feedback rules**
+**Two rules that only show up under a held button.** Painting guards on the
+column, not the landing height, because height rises the moment a piece lands
+and a cursor that never moved would otherwise stack a tower on its own last
+placement. And pieces painted during the current drag are excluded from
+targeting, because otherwise each one becomes the next ray's target and a
+stationary cursor walks a line of pieces sideways.
 
-- A ghost of the pending piece follows the cursor at its true rotated footprint.
-- Invalid placement renders red and the click is a no-op rather than a silent
-  failure. Invalid means: overlapping an occupied cell, outside the build
-  region, or unsupported. The ghost reports which, so a rejected placement is
-  never a mystery.
-- `R` rotates through 0/90/180/270 and the ghost updates immediately. Rotation
-  is about the piece's own footprint centre, so a `4 × 1` wall pivots where you
-  expect rather than flinging itself across the grid.
-- Scroll zooms at the cursor; middle-drag or space-drag pans.
-- `PageUp` and `PageDown` move between elevation slices.
+**Moving** drags on a horizontal plane through the selection's base rather than
+raycasting geometry that is moving with the cursor. The preview outlines where
+the selection would land and turns red when it could not, and nothing is
+committed until release, so one drag is one undo step.
 
-**Placement height.** A piece drops to rest on top of whatever is already in
-that column, or on the ground if it is clear. This is independent of the slice
-being edited: standing on the ground slice and hovering over a two metre stack
-places on top of the stack, because floating is illegal and there is nowhere
-else the piece could go. The slice decides what draws solid, not where pieces
-land. Holding Alt pins the piece to the slice exactly.
+## 5a. The plan overview
 
-**Site and region.** The region is centred on the FOB wherever the FOB is put,
-so it can extend past the site the FOB was dropped on. That is intended: the
-site only bounds where the FOB itself may go, and once placed the region it
-defines is the authority on everything else. The plan pane draws the region
-rather than the site, so the editable area and the legal area stay the same
-thing.
+Toggled from the toolbar, hidden by default. It is read-only: a top-down
+projection drawn lowest piece first, so what you see is the roofline. Pan, zoom
+and click to select.
 
----
+It exists for the one thing a perspective camera is bad at, which is judging a
+whole 103 metre site at once: where the perimeter runs, how far apart things
+are, what the footprint actually covers.
 
 ## 6. Validation
 
@@ -348,10 +351,9 @@ key that fits the camera to the bounding box of all pieces, preset top, front
 and corner views, and a **slice clip** toggle that hides everything above the
 current 2D slice so you can see inside a bunker while working on it.
 
-**Selection linking.** Selecting in 2D highlights the piece in 3D with an
-outline box, which keeps the shared materials untouched. Clicking a mesh in 3D
-raycasts to a piece id, selects it in the model, and moves the plan pane to that
-piece's elevation. This is what makes the two panes feel like one tool
+**Selection.** A selected piece draws as an outline box, which keeps the shared
+materials untouched. Selection is shared with the plan overview, so a piece
+picked in either pane is highlighted in both. This is what makes the two panes feel like one tool
 rather than an editor next to a screenshot.
 
 ---
@@ -397,15 +399,20 @@ FOB region, commands and history, serialisation. Unit tests for collision,
 rotated footprints, drop-to-support, region containment and undo. No UI; this is the layer everything depends on and the cheapest place to
 get it right.
 
-**Phase 2 — 2D editing.** ✅ Grid rendering, pan and zoom, elevation slices with
-the below/above layers, palette selection, place and delete, ghost preview,
-validity feedback. At this point the tool is usable as a 2D-only planner.
+**Phase 2 — 2D editing.** ✅ Built, then replaced in phase 4a by 3D placement.
+The renderer survives as the read-only plan overview; the slice editing, the
+tools and the placement modifier were deleted.
 
 **Phase 3 — 3D view.** ✅ Scene, box meshes, delta sync, OrbitControls, frame
 build. The first build where the core promise is visible.
 
 **Phase 4 — Full editing.** ✅ Selection and marquee, drag to move, rotate, copy
 and paste, slice clipping in 3D, click-to-select in 3D, the issues panel.
+
+**Phase 4a — Editing moved into 3D.** ✅ Placement, targeting, the ghost, moving
+and the section cut all moved to the 3D view, and the plan pane became a
+toggleable overview. The model core did not change: the landing rule was already
+`dropZ` and the red ghost was already the support validation.
 
 **Phase 5 — Persistence and reporting.** Autosave, named saves, import and
 export, share link, screenshot, and the tally panel: element counts and total
@@ -461,4 +468,5 @@ reasoning behind the rules is not lost:
 | Placeholder costs read as authoritative | Users plan against invented numbers | `costPlaceholder` in the catalog; the tally marks them rather than showing a bare figure |
 | Support rules change once the game is checked | Existing builds become invalid | `canSupport` is catalog data and the validator reports rather than deletes, so a rule change flags affected pieces instead of destroying work |
 | The two panes disagree about coordinates | Confusing and hard to debug | One shared `gridToWorld()`, unit tested |
-| Touch and small screens | Unusable on tablets | Layout stacks to tabs under a breakpoint; touch handled as a Phase 6 pass, not retrofitted late |
+| Touch and small screens | Unusable on tablets | Layout stacks under a breakpoint; touch handled as a Phase 6 pass, not retrofitted late |
+| Precision at grazing camera angles | Pieces land a cell off | The ghost paints its footprint on the landing surface, so the cells are visible before committing |
