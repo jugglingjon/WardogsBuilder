@@ -39,11 +39,10 @@ jobs:
 
       - run: npm run build
 
-      # enablement switches Pages on through the API on the first run, so the
-      # site does not have to be turned on by hand in repository settings.
+      # Pages has to be switched on once by hand: creating the site through the
+      # API needs admin rights that the workflow token does not have, and
+      # enablement: true fails with "Resource not accessible by integration".
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:

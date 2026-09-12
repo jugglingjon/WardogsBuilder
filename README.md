@@ -31,9 +31,13 @@ hosting, or on a GitHub Pages project site, with no configuration.
 ### GitHub Pages
 
 `.github/workflows/pages.yml` builds, runs the tests and publishes on every
-push to `main` or the working branch. It switches Pages on itself the first
-time it runs, so there is nothing to configure. The site is at
-`https://jugglingjon.github.io/WardogsBuilder/`.
+push to `main` or the working branch.
+
+Pages has to be switched on once, under **Settings → Pages → Build and
+deployment → Source → GitHub Actions**. It cannot be done from the workflow:
+creating the site through the API needs admin rights the workflow token does not
+have. Once it is on, re-run the workflow from the Actions tab and the site
+appears at `https://jugglingjon.github.io/WardogsBuilder/`.
 
 ## Where things are
 
